@@ -1,0 +1,36 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: gymtrack-postgres
+    environment:
+      POSTGRES_USER: gymtrack
+      POSTGRES_PASSWORD: gymtrack
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gymtrack"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: gymtrack-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: gymtrack
+      RABBITMQ_DEFAULT_PASS: gymtrack
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres-data:
