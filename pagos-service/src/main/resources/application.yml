@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: pagos-service
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/gymtrack_pagos}
+    username: ${DB_USER:gymtrack}
+    password: ${DB_PASSWORD:gymtrack}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  sql:
+    init:
+      mode: never
+
+server:
+  port: 8083
