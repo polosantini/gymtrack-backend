@@ -42,6 +42,8 @@ public class Notificacion {
 
     public Notificacion () {}
 
+    public Long getId() { return id; }
+
     public Long getMiembroId() {
         return miembroId;
     }
@@ -74,9 +76,7 @@ public class Notificacion {
         this.fecha = fecha;
     }
 
-    public boolean isLeida() {
-        return leida;
-    }
+    public boolean getLeida() { return leida; }
 
     public void setLeida(boolean leida) {
         this.leida = leida;
