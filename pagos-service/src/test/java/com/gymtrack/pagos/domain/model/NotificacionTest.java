@@ -15,7 +15,7 @@ class NotificacionTest {
 
         n.defaultCampos();
 
-        assertFalse(n.getLeida());
+        assertFalse(n.isLeida());
         assertNotNull(n.getFecha());
     }
 }

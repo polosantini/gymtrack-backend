@@ -36,7 +36,7 @@ class NotificacionRepositoryTest {
         );
 
         assertNotNull(guardada.getId());
-        assertFalse(guardada.getLeida());
+        assertFalse(guardada.isLeida());
     }
 
     @Test
