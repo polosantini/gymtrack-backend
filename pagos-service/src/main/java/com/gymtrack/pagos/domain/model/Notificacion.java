@@ -76,7 +76,7 @@ public class Notificacion {
         this.fecha = fecha;
     }
 
-    public boolean getLeida() { return leida; }
+    public boolean isLeida() { return leida; }
 
     public void setLeida(boolean leida) {
         this.leida = leida;

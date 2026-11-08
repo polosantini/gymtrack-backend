@@ -93,6 +93,66 @@
           }
         }
       ]
+    },
+    {
+      "name": "Pagos",
+      "item": [
+        {
+          "name": "Registrar pago",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"miembroId\": 1,\n  \"plan\": \"BASICO\",\n  \"periodo\": \"MENSUAL\",\n  \"monto\": 50000,\n  \"metodo\": \"EFECTIVO\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "http://localhost:8083/api/pagos",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8083",
+              "path": ["api", "pagos"]
+            }
+          }
+        },
+        {
+          "name": "Listar pagos por miembro",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8083/api/pagos?miembroId=1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8083",
+              "path": ["api", "pagos"],
+              "query": [
+                { "key": "miembroId", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar notificaciones por miembro",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8083/api/notificaciones?miembroId=1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8083",
+              "path": ["api", "notificaciones"],
+              "query": [
+                { "key": "miembroId", "value": "1" }
+              ]
+            }
+          }
+        }
+      ]
     }
   ]
 }

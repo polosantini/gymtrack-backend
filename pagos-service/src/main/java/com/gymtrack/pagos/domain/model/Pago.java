@@ -52,6 +52,7 @@ public class Pago {
 
     public Long getId() { return id; }
 
+
     public Long getMiembroId() {
         return miembroId;
     }
