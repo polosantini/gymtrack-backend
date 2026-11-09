@@ -10,4 +10,7 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
 
     /** Cuántas reservas hay en un estado para una sesión (clase, fecha). Sirve para calcular el aforo. */
     long countByClaseIdAndFechaAndEstado(Long claseId, LocalDate fecha, EstadoReserva estado);
+
+    /** True si el miembro ya tiene una reserva (en un estado distinto al dado) para esa clase y fecha. */
+    boolean existsByMiembroIdAndClaseIdAndFechaAndEstadoNot(Long miembroId, Long claseId, LocalDate fecha, EstadoReserva estado);
 }
