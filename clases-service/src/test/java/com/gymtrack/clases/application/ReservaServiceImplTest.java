@@ -145,33 +145,7 @@ class ReservaServiceImplTest {
         return r;
     }
 
-    @Test
-    @DisplayName("listarPorClaseYFecha separa confirmados y espera, y calcula cupos libres")
-    void listarPorClaseYFecha() {
-        Clase clase = spinningAforo3();
-        when(claseRepository.findById(1L)).thenReturn(Optional.of(clase));
-        when(reservaRepository.findByClaseIdAndFechaAndEstadoOrderByIdAsc(1L, MARTES_17, EstadoReserva.CONFIRMADA))
-                .thenReturn(List.of(reserva(clase, 1L, EstadoReserva.CONFIRMADA, null),
-                        reserva(clase, 2L, EstadoReserva.CONFIRMADA, null)));
-        when(reservaRepository.findByClaseIdAndFechaAndEstadoOrderByPosicionEsperaAsc(1L, MARTES_17, EstadoReserva.EN_ESPERA))
-                .thenReturn(List.of(reserva(clase, 4L, EstadoReserva.EN_ESPERA, 1)));
 
-        ReservasClaseResponse respuesta = reservaService.listarPorClaseYFecha(1L, MARTES_17);
-
-        assertEquals(2, respuesta.confirmados().size());
-        assertEquals(1, respuesta.enEspera().size());
-        assertEquals(1, respuesta.enEspera().get(0).posicionEspera());
-        assertEquals(1, respuesta.cuposLibres());
-    }
-
-    @Test
-    @DisplayName("listarPorClaseYFecha con fecha que no es día de la clase lanza FechaNoCorrespondeException (400)")
-    void listarPorClaseYFechaQueNoCorresponde() {
-        when(claseRepository.findById(1L)).thenReturn(Optional.of(spinningAforo3()));
-
-        assertThrows(FechaNoCorrespondeException.class,
-                () -> reservaService.listarPorClaseYFecha(1L, MARTES_17.plusDays(1)));
-    }
 
     @Test
     @DisplayName("listarPorMiembro devuelve el historial con asistencia")

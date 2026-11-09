@@ -98,37 +98,8 @@ class ReservaControllerTest {
                 .andExpect(jsonPath("$.message").value("Falta el parámetro requerido: miembroId"));
     }
 
-    @Test
-    @DisplayName("GET /api/clases/{id}/reservas separa confirmados y enEspera")
-    void reservasDeClaseSeparadas() throws Exception {
-        ReservaResponse confirmada = new ReservaResponse(1L, 1L, 1L, "Spinning", MARTES_17, LocalTime.of(18, 0), "CONFIRMADA", null, null);
-        ReservaResponse espera = new ReservaResponse(4L, 4L, 1L, "Spinning", MARTES_17, LocalTime.of(18, 0), "EN_ESPERA", 1, null);
-        when(reservaService.listarPorClaseYFecha(1L, MARTES_17)).thenReturn(new ReservasClaseResponse(
-                1L, "Spinning", MARTES_17, LocalTime.of(18, 0), 3, 2, List.of(confirmada), List.of(espera)));
 
-        mockMvc.perform(get("/api/clases/1/reservas").param("fecha", "2026-11-17"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.confirmados[0].estado").value("CONFIRMADA"))
-                .andExpect(jsonPath("$.enEspera[0].posicionEspera").value(1));
-    }
 
-    @Test
-    @DisplayName("GET /api/clases/{id}/reservas con fecha inválida responde 400")
-    void reservasDeClaseFechaInvalidaEs400() throws Exception {
-        mockMvc.perform(get("/api/clases/1/reservas").param("fecha", "2026-13-45"))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(400));
-    }
-
-    @Test
-    @DisplayName("GET /api/clases/{id}/reservas con clase inexistente responde 404")
-    void reservasDeClaseInexistenteEs404() throws Exception {
-        when(reservaService.listarPorClaseYFecha(99L, MARTES_17)).thenThrow(new ClaseNotFoundException(99L));
-
-        mockMvc.perform(get("/api/clases/99/reservas").param("fecha", "2026-11-17"))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.status").value(404));
-    }
 
     @Test
     @DisplayName("PATCH /api/reservas/{id}/cancelar responde 200 con la reserva CANCELADA")

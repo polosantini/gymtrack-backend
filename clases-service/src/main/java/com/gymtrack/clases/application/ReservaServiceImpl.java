@@ -68,38 +68,6 @@ public class ReservaServiceImpl implements ReservaService {
                 .toList();
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public ReservasClaseResponse listarPorClaseYFecha(Long claseId, LocalDate fecha) {
-        Clase clase = claseRepository.findById(claseId)
-                .orElseThrow(() -> new ClaseNotFoundException(claseId));
-
-        if (!clase.seDictaEl(fecha)) {
-            throw new FechaNoCorrespondeException(clase, fecha);
-        }
-
-        List<ReservaResponse> confirmados = reservaRepository
-                .findByClaseIdAndFechaAndEstadoOrderByIdAsc(claseId, fecha, EstadoReserva.CONFIRMADA)
-                .stream().map(this::toResponse).toList();
-
-        // La espera se ordena por posición, nunca por id. Las CANCELADA no aparecen aquí.
-        List<ReservaResponse> enEspera = reservaRepository
-                .findByClaseIdAndFechaAndEstadoOrderByPosicionEsperaAsc(claseId, fecha, EstadoReserva.EN_ESPERA)
-                .stream().map(this::toResponse).toList();
-
-        int cuposLibres = Math.max(0, clase.getAforo() - confirmados.size());
-
-        return new ReservasClaseResponse(
-                clase.getId(),
-                clase.getNombre(),
-                fecha,
-                clase.getHora(),
-                clase.getAforo(),
-                cuposLibres,
-                confirmados,
-                enEspera
-        );
-    }
 
     @Override
     public ReservaResponse cancelar(Long reservaId) {

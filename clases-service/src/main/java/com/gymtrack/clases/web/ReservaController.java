@@ -34,13 +34,6 @@ public class ReservaController {
         return ResponseEntity.ok(reservaService.listarPorMiembro(miembroId));
     }
 
-    @GetMapping("/clases/{claseId}/reservas")
-    public ResponseEntity<ReservasClaseResponse> listarPorClaseYFecha(
-            @PathVariable Long claseId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
-        return ResponseEntity.ok(reservaService.listarPorClaseYFecha(claseId, fecha));
-    }
-
     @PatchMapping("/reservas/{id}/cancelar")
     public ResponseEntity<ReservaResponse> cancelar(@PathVariable Long id) {
         return ResponseEntity.ok(reservaService.cancelar(id));

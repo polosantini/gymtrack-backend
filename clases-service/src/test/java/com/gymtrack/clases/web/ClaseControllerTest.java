@@ -1,6 +1,7 @@
 package com.gymtrack.clases.web;
 
 import com.gymtrack.clases.application.ClaseService;
+import com.gymtrack.clases.application.ClaseQueryService;
 import com.gymtrack.clases.domain.exception.ClaseNotFoundException;
 import com.gymtrack.clases.domain.model.DiaSemana;
 import com.gymtrack.clases.web.dto.ClaseResponse;
@@ -32,6 +33,9 @@ class ClaseControllerTest {
 
     @MockBean
     private ClaseService claseService;
+
+    @MockBean
+    private ClaseQueryService claseQueryService;
 
     private static final String CLASE_VALIDA = """
             {
@@ -98,7 +102,7 @@ class ClaseControllerTest {
     @Test
     @DisplayName("GET /api/clases?fecha= devuelve el catálogo")
     void listarCatalogo() throws Exception {
-        when(claseService.listar(LocalDate.of(2026, 11, 17))).thenReturn(List.of(respuestaSpinning()));
+        when(claseQueryService.listar(LocalDate.of(2026, 11, 17))).thenReturn(List.of(respuestaSpinning()));
 
         mockMvc.perform(get("/api/clases").param("fecha", "2026-11-17"))
                 .andExpect(status().isOk())
@@ -117,7 +121,7 @@ class ClaseControllerTest {
     @Test
     @DisplayName("GET /api/clases/{id} inexistente responde 404 con formato uniforme")
     void claseInexistenteEs404() throws Exception {
-        when(claseService.obtenerPorId(99L)).thenThrow(new ClaseNotFoundException(99L));
+        when(claseQueryService.obtenerPorId(99L)).thenThrow(new ClaseNotFoundException(99L));
 
         mockMvc.perform(get("/api/clases/99"))
                 .andExpect(status().isNotFound())
