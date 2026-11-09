@@ -1,5 +1,10 @@
 package com.gymtrack.clases.application;
 
+import com.gymtrack.clases.application.port.MiembrosClient;
+import com.gymtrack.clases.application.port.AccesoMembresia;
+import com.gymtrack.clases.domain.strategy.ReglasReservaResolver;
+import com.gymtrack.clases.domain.strategy.ReglaPremium;
+import org.junit.jupiter.api.BeforeEach;
 import com.gymtrack.clases.domain.exception.ClaseNotFoundException;
 import com.gymtrack.clases.domain.exception.EstadoReservaInvalidoException;
 import com.gymtrack.clases.domain.exception.FechaNoCorrespondeException;
@@ -17,7 +22,6 @@ import com.gymtrack.clases.web.dto.ReservasClaseResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -46,8 +50,21 @@ class ReservaServiceImplTest {
     @Mock
     private ReservaRepository reservaRepository;
 
-    @InjectMocks
+    @Mock
+    private MiembrosClient miembrosClient;
+
     private ReservaServiceImpl reservaService;
+
+    @BeforeEach
+    void prepararServicio() {
+        reservaService = new ReservaServiceImpl(claseRepository, reservaRepository, miembrosClient,
+                new ReglasReservaResolver(List.of(new ReglaPremium())),
+                new ReservarClaseUseCaseFactory(claseRepository, reservaRepository));
+    }
+
+    private void miembroActivo(Long miembroId) {
+        when(miembrosClient.consultarAcceso(miembroId)).thenReturn(new AccesoMembresia(true, "PREMIUM"));
+    }
 
     private Clase spinningAforo3() {
         Clase clase = new Clase();
@@ -63,6 +80,7 @@ class ReservaServiceImplTest {
     }
 
     private void claseExisteSinDuplicado(Long miembroId) {
+        miembroActivo(miembroId);
         when(claseRepository.findById(1L)).thenReturn(Optional.of(spinningAforo3()));
         when(reservaRepository.existsByMiembroIdAndClaseIdAndFechaAndEstadoNot(
                 miembroId, 1L, MARTES_17, EstadoReserva.CANCELADA)).thenReturn(false);
@@ -98,6 +116,7 @@ class ReservaServiceImplTest {
     @Test
     @DisplayName("Clase inexistente lanza ClaseNotFoundException (404)")
     void claseInexistente() {
+        miembroActivo(10L);
         when(claseRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThrows(ClaseNotFoundException.class,
@@ -107,6 +126,7 @@ class ReservaServiceImplTest {
     @Test
     @DisplayName("Fecha que no es día de la clase lanza FechaNoCorrespondeException (400)")
     void fechaQueNoCorresponde() {
+        miembroActivo(10L);
         when(claseRepository.findById(1L)).thenReturn(Optional.of(spinningAforo3()));
         LocalDate miercoles = MARTES_17.plusDays(1);
 
@@ -255,6 +275,7 @@ class ReservaServiceImplTest {
     @Test
     @DisplayName("Reserva repetida del mismo miembro, clase y fecha lanza ReservaDuplicadaException (409)")
     void reservaDuplicada() {
+        miembroActivo(10L);
         when(claseRepository.findById(1L)).thenReturn(Optional.of(spinningAforo3()));
         when(reservaRepository.existsByMiembroIdAndClaseIdAndFechaAndEstadoNot(
                 10L, 1L, MARTES_17, EstadoReserva.CANCELADA)).thenReturn(true);
