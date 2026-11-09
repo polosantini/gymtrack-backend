@@ -17,13 +17,13 @@ public final class EventosConfig {
     public static final String RK_PAGO_REGISTRADO = "pago.registrado";
 
     /** Routing key de {@link MembresiaProximaVencer}. */
-    public static final String RK_MEMBRESIA_PROXIMA_VENCER = "membresia.proxima-vencer";
+    public static final String RK_MEMBRESIA_PROXIMA_VENCER = "membresia.proxima.vencer";
 
     /** Routing key de {@link ReservaCancelada}. */
     public static final String RK_RESERVA_CANCELADA = "reserva.cancelada";
 
     /** Routing key de {@link ReservaCupoAsignado}. */
-    public static final String RK_RESERVA_CUPO_ASIGNADO = "reserva.cupo-asignado";
+    public static final String RK_RESERVA_CUPO_ASIGNADO = "reserva.cupo.asignado";
 
     private EventosConfig() {
         // Solo constantes: no se instancia.
