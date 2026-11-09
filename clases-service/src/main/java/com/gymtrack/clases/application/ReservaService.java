@@ -17,4 +17,10 @@ public interface ReservaService {
 
     /** Confirmados y lista de espera (ordenada por posición) de una sesión (clase, fecha). */
     ReservasClaseResponse listarPorClaseYFecha(Long claseId, LocalDate fecha);
+
+    /** Cancela la reserva (estado CANCELADA). Si estaba en espera, los que venían detrás suben un puesto. */
+    ReservaResponse cancelar(Long reservaId);
+
+    /** Marca si el miembro asistió o no. Solo para reservas CONFIRMADA. */
+    ReservaResponse marcarAsistencia(Long reservaId, boolean asistio);
 }

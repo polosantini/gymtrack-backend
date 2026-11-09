@@ -1,8 +1,10 @@
 package com.gymtrack.clases.web;
 
 import com.gymtrack.clases.domain.exception.ClaseNotFoundException;
+import com.gymtrack.clases.domain.exception.EstadoReservaInvalidoException;
 import com.gymtrack.clases.domain.exception.FechaNoCorrespondeException;
 import com.gymtrack.clases.domain.exception.ReservaDuplicadaException;
+import com.gymtrack.clases.domain.exception.ReservaNotFoundException;
 import com.gymtrack.clases.web.dto.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
@@ -31,6 +33,16 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ClaseNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleClaseNotFound(ClaseNotFoundException ex, HttpServletRequest request) {
         return construir(HttpStatus.NOT_FOUND, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(ReservaNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleReservaNotFound(ReservaNotFoundException ex, HttpServletRequest request) {
+        return construir(HttpStatus.NOT_FOUND, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(EstadoReservaInvalidoException.class)
+    public ResponseEntity<ErrorResponse> handleEstadoReservaInvalido(EstadoReservaInvalidoException ex, HttpServletRequest request) {
+        return construir(HttpStatus.CONFLICT, ex.getMessage(), request);
     }
 
     @ExceptionHandler(FechaNoCorrespondeException.class)

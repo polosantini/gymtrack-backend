@@ -1,6 +1,8 @@
 package com.gymtrack.clases.application;
 
 import com.gymtrack.clases.domain.exception.ClaseNotFoundException;
+import com.gymtrack.clases.domain.exception.EstadoReservaInvalidoException;
+import com.gymtrack.clases.domain.exception.ReservaNotFoundException;
 import com.gymtrack.clases.domain.exception.FechaNoCorrespondeException;
 import com.gymtrack.clases.domain.exception.ReservaDuplicadaException;
 import com.gymtrack.clases.domain.model.Clase;
@@ -110,6 +112,58 @@ public class ReservaServiceImpl implements ReservaService {
                 confirmados,
                 enEspera
         );
+    }
+
+    @Override
+    public ReservaResponse cancelar(Long reservaId) {
+        Reserva reserva = buscarReserva(reservaId);
+
+        if (reserva.getEstado() == EstadoReserva.CANCELADA) {
+            throw new EstadoReservaInvalidoException("La reserva " + reservaId + " ya está cancelada");
+        }
+
+        EstadoReserva estadoAnterior = reserva.getEstado();
+        Integer posicionAnterior = reserva.getPosicionEspera();
+
+        reserva.setEstado(EstadoReserva.CANCELADA);
+        reserva.setPosicionEspera(null);
+
+        // Si se va alguien de la lista de espera, los que estaban detrás suben un puesto
+        // (así las posiciones siguen siendo 1, 2, 3... sin huecos ni repetidos).
+        if (estadoAnterior == EstadoReserva.EN_ESPERA && posicionAnterior != null) {
+            reservaRepository.findByClaseIdAndFechaAndEstadoOrderByPosicionEsperaAsc(
+                            reserva.getClase().getId(), reserva.getFecha(), EstadoReserva.EN_ESPERA)
+                    .stream()
+                    .filter(otra -> otra != reserva && otra.getPosicionEspera() > posicionAnterior)
+                    .forEach(otra -> otra.setPosicionEspera(otra.getPosicionEspera() - 1));
+        }
+
+        boolean liberaCupo = estadoAnterior == EstadoReserva.CONFIRMADA;
+        // TODO Fase 3 (Observer): publicar ReservaCancelada(reserva.getId(), claseId, fecha, liberaCupo)
+        //      en el exchange gymtrack.events con la routing key EventosConfig.RK_RESERVA_CANCELADA.
+        // TODO Fase 2 (lista de espera): si liberaCupo es true, pasar a CONFIRMADA al primero en espera.
+
+        // No hace falta save(): la reserva está gestionada por JPA dentro de la transacción
+        // y los cambios se guardan al terminar el método.
+        return toResponse(reserva);
+    }
+
+    @Override
+    public ReservaResponse marcarAsistencia(Long reservaId, boolean asistio) {
+        Reserva reserva = buscarReserva(reservaId);
+
+        if (reserva.getEstado() != EstadoReserva.CONFIRMADA) {
+            throw new EstadoReservaInvalidoException("Solo se puede marcar asistencia en reservas CONFIRMADA. La reserva "
+                    + reservaId + " está " + reserva.getEstado());
+        }
+
+        reserva.setAsistencia(asistio);
+        return toResponse(reserva);
+    }
+
+    private Reserva buscarReserva(Long reservaId) {
+        return reservaRepository.findById(reservaId)
+                .orElseThrow(() -> new ReservaNotFoundException(reservaId));
     }
 
     private ReservaResponse toResponse(Reserva reserva) {
