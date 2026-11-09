@@ -1,8 +1,10 @@
 package com.gymtrack.clases.application;
 
 import com.gymtrack.clases.domain.exception.ClaseNotFoundException;
+import com.gymtrack.clases.domain.exception.EstadoReservaInvalidoException;
 import com.gymtrack.clases.domain.exception.FechaNoCorrespondeException;
 import com.gymtrack.clases.domain.exception.ReservaDuplicadaException;
+import com.gymtrack.clases.domain.exception.ReservaNotFoundException;
 import com.gymtrack.clases.domain.model.Clase;
 import com.gymtrack.clases.domain.model.DiaSemana;
 import com.gymtrack.clases.domain.model.EstadoReserva;
@@ -166,6 +168,88 @@ class ReservaServiceImplTest {
         assertEquals(Boolean.TRUE, historial.get(0).asistencia());
         assertEquals("CANCELADA", historial.get(1).estado());
         assertNull(historial.get(1).asistencia());
+    }
+
+    // ---------- PATCH /api/reservas/{id}/cancelar ----------
+
+    @Test
+    @DisplayName("cancelar una reserva CONFIRMADA la deja CANCELADA")
+    void cancelarConfirmada() {
+        Reserva confirmada = reserva(spinningAforo3(), 1L, EstadoReserva.CONFIRMADA, null);
+        when(reservaRepository.findById(1L)).thenReturn(Optional.of(confirmada));
+
+        ReservaResponse respuesta = reservaService.cancelar(1L);
+
+        assertEquals("CANCELADA", respuesta.estado());
+        assertNull(respuesta.posicionEspera());
+        assertEquals(EstadoReserva.CANCELADA, confirmada.getEstado());
+    }
+
+    @Test
+    @DisplayName("cancelar una reserva EN_ESPERA hace subir un puesto a los que venían detrás")
+    void cancelarEnEsperaCorreLaFila() {
+        Clase clase = spinningAforo3();
+        Reserva primera = reserva(clase, 4L, EstadoReserva.EN_ESPERA, 1);
+        Reserva segunda = reserva(clase, 5L, EstadoReserva.EN_ESPERA, 2);
+        Reserva tercera = reserva(clase, 6L, EstadoReserva.EN_ESPERA, 3);
+        when(reservaRepository.findById(4L)).thenReturn(Optional.of(primera));
+        when(reservaRepository.findByClaseIdAndFechaAndEstadoOrderByPosicionEsperaAsc(1L, MARTES_17, EstadoReserva.EN_ESPERA))
+                .thenReturn(List.of(segunda, tercera));
+
+        ReservaResponse respuesta = reservaService.cancelar(4L);
+
+        assertEquals("CANCELADA", respuesta.estado());
+        assertNull(respuesta.posicionEspera());
+        assertEquals(1, segunda.getPosicionEspera());
+        assertEquals(2, tercera.getPosicionEspera());
+    }
+
+    @Test
+    @DisplayName("cancelar una reserva ya CANCELADA lanza EstadoReservaInvalidoException (409)")
+    void cancelarYaCancelada() {
+        when(reservaRepository.findById(1L))
+                .thenReturn(Optional.of(reserva(spinningAforo3(), 1L, EstadoReserva.CANCELADA, null)));
+
+        assertThrows(EstadoReservaInvalidoException.class, () -> reservaService.cancelar(1L));
+    }
+
+    @Test
+    @DisplayName("cancelar una reserva inexistente lanza ReservaNotFoundException (404)")
+    void cancelarInexistente() {
+        when(reservaRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThrows(ReservaNotFoundException.class, () -> reservaService.cancelar(99L));
+    }
+
+    // ---------- PATCH /api/reservas/{id}/asistencia ----------
+
+    @Test
+    @DisplayName("marcarAsistencia guarda asistio en una reserva CONFIRMADA")
+    void marcarAsistenciaConfirmada() {
+        Reserva confirmada = reserva(spinningAforo3(), 1L, EstadoReserva.CONFIRMADA, null);
+        when(reservaRepository.findById(1L)).thenReturn(Optional.of(confirmada));
+
+        ReservaResponse respuesta = reservaService.marcarAsistencia(1L, true);
+
+        assertEquals(Boolean.TRUE, respuesta.asistencia());
+        assertEquals(Boolean.TRUE, confirmada.getAsistencia());
+    }
+
+    @Test
+    @DisplayName("marcarAsistencia en una reserva EN_ESPERA lanza EstadoReservaInvalidoException (409)")
+    void marcarAsistenciaEnEspera() {
+        when(reservaRepository.findById(4L))
+                .thenReturn(Optional.of(reserva(spinningAforo3(), 4L, EstadoReserva.EN_ESPERA, 1)));
+
+        assertThrows(EstadoReservaInvalidoException.class, () -> reservaService.marcarAsistencia(4L, true));
+    }
+
+    @Test
+    @DisplayName("marcarAsistencia en una reserva inexistente lanza ReservaNotFoundException (404)")
+    void marcarAsistenciaInexistente() {
+        when(reservaRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThrows(ReservaNotFoundException.class, () -> reservaService.marcarAsistencia(99L, false));
     }
 
     @Test

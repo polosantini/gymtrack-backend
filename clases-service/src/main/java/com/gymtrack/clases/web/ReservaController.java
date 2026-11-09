@@ -1,6 +1,7 @@
 package com.gymtrack.clases.web;
 
 import com.gymtrack.clases.application.ReservaService;
+import com.gymtrack.clases.web.dto.AsistenciaRequest;
 import com.gymtrack.clases.web.dto.ReservaRequest;
 import com.gymtrack.clases.web.dto.ReservaResponse;
 import com.gymtrack.clases.web.dto.ReservasClaseResponse;
@@ -38,5 +39,16 @@ public class ReservaController {
             @PathVariable Long claseId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
         return ResponseEntity.ok(reservaService.listarPorClaseYFecha(claseId, fecha));
+    }
+
+    @PatchMapping("/reservas/{id}/cancelar")
+    public ResponseEntity<ReservaResponse> cancelar(@PathVariable Long id) {
+        return ResponseEntity.ok(reservaService.cancelar(id));
+    }
+
+    @PatchMapping("/reservas/{id}/asistencia")
+    public ResponseEntity<ReservaResponse> marcarAsistencia(@PathVariable Long id,
+                                                            @Valid @RequestBody AsistenciaRequest request) {
+        return ResponseEntity.ok(reservaService.marcarAsistencia(id, request.asistio()));
     }
 }
