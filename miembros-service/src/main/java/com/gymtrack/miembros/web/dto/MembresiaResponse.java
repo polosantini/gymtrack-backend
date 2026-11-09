@@ -1,7 +1,5 @@
 package com.gymtrack.miembros.web.dto;
 
-import org.springframework.cglib.core.Local;
-
 import java.time.LocalDate;
 
 public record MembresiaResponse(
