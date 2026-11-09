@@ -208,6 +208,27 @@
               "path": ["api", "clases", "1"]
             }
           }
+        },
+        {
+          "name": "Reservar clase",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"miembroId\": 1,\n  \"claseId\": 2,\n  \"fecha\": \"2026-11-17\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "http://localhost:8082/api/reservas",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["api", "reservas"]
+            }
+          }
         }
       ]
     }

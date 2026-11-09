@@ -1,6 +1,8 @@
 package com.gymtrack.clases.web;
 
 import com.gymtrack.clases.domain.exception.ClaseNotFoundException;
+import com.gymtrack.clases.domain.exception.FechaNoCorrespondeException;
+import com.gymtrack.clases.domain.exception.ReservaDuplicadaException;
 import com.gymtrack.clases.web.dto.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
@@ -29,6 +31,16 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ClaseNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleClaseNotFound(ClaseNotFoundException ex, HttpServletRequest request) {
         return construir(HttpStatus.NOT_FOUND, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(FechaNoCorrespondeException.class)
+    public ResponseEntity<ErrorResponse> handleFechaNoCorresponde(FechaNoCorrespondeException ex, HttpServletRequest request) {
+        return construir(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(ReservaDuplicadaException.class)
+    public ResponseEntity<ErrorResponse> handleReservaDuplicada(ReservaDuplicadaException ex, HttpServletRequest request) {
+        return construir(HttpStatus.CONFLICT, ex.getMessage(), request);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
