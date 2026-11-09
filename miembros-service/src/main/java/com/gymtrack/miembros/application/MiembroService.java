@@ -10,4 +10,5 @@ public interface MiembroService {
     MiembroResponse obtenerPorId(Long id);
     MembresiaResponse crearMembresia(Long miembroId, MembresiaRequest request);
     List<PlanResponse> listarPlanes();
+    AccesoResponse verificarAcceso(Long id);
 }
