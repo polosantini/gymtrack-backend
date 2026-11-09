@@ -8,6 +8,7 @@ import java.time.LocalTime;
 /**
  * @param estado         CONFIRMADA, EN_ESPERA o CANCELADA
  * @param posicionEspera posición en la lista de espera (solo si estado es EN_ESPERA; si no, null)
+ * @param asistencia     true asistió, false no asistió, null aún no se ha marcado
  */
 public record ReservaResponse(
         Long id,
@@ -17,5 +18,6 @@ public record ReservaResponse(
         LocalDate fecha,
         @JsonFormat(pattern = "HH:mm") LocalTime hora,
         String estado,
-        Integer posicionEspera
+        Integer posicionEspera,
+        Boolean asistencia
 ) {}

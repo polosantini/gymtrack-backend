@@ -10,8 +10,12 @@ import com.gymtrack.clases.domain.repository.ClaseRepository;
 import com.gymtrack.clases.domain.repository.ReservaRepository;
 import com.gymtrack.clases.web.dto.ReservaRequest;
 import com.gymtrack.clases.web.dto.ReservaResponse;
+import com.gymtrack.clases.web.dto.ReservasClaseResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
+import java.util.List;
 
 @Service
 @Transactional
@@ -67,6 +71,47 @@ public class ReservaServiceImpl implements ReservaService {
         return toResponse(guardada);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<ReservaResponse> listarPorMiembro(Long miembroId) {
+        return reservaRepository.findByMiembroIdOrderByFechaDescIdDesc(miembroId).stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ReservasClaseResponse listarPorClaseYFecha(Long claseId, LocalDate fecha) {
+        Clase clase = claseRepository.findById(claseId)
+                .orElseThrow(() -> new ClaseNotFoundException(claseId));
+
+        if (!clase.seDictaEl(fecha)) {
+            throw new FechaNoCorrespondeException(clase, fecha);
+        }
+
+        List<ReservaResponse> confirmados = reservaRepository
+                .findByClaseIdAndFechaAndEstadoOrderByIdAsc(claseId, fecha, EstadoReserva.CONFIRMADA)
+                .stream().map(this::toResponse).toList();
+
+        // La espera se ordena por posición, nunca por id. Las CANCELADA no aparecen aquí.
+        List<ReservaResponse> enEspera = reservaRepository
+                .findByClaseIdAndFechaAndEstadoOrderByPosicionEsperaAsc(claseId, fecha, EstadoReserva.EN_ESPERA)
+                .stream().map(this::toResponse).toList();
+
+        int cuposLibres = Math.max(0, clase.getAforo() - confirmados.size());
+
+        return new ReservasClaseResponse(
+                clase.getId(),
+                clase.getNombre(),
+                fecha,
+                clase.getHora(),
+                clase.getAforo(),
+                cuposLibres,
+                confirmados,
+                enEspera
+        );
+    }
+
     private ReservaResponse toResponse(Reserva reserva) {
         Clase clase = reserva.getClase();
         return new ReservaResponse(
@@ -77,7 +122,8 @@ public class ReservaServiceImpl implements ReservaService {
                 reserva.getFecha(),
                 clase.getHora(),
                 reserva.getEstado().name(),
-                reserva.getPosicionEspera()
+                reserva.getPosicionEspera(),
+                reserva.getAsistencia()
         );
     }
 }

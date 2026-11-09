@@ -12,6 +12,8 @@ import java.time.LocalDate;
  *
  * <p>{@code posicionEspera} solo tiene valor cuando el estado es EN_ESPERA;
  * en CONFIRMADA o CANCELADA puede ser null.</p>
+ *
+ * <p>{@code asistencia} es null mientras no se haya marcado si el miembro asistió.</p>
  */
 @Entity
 @Table(name = "reserva")
@@ -37,6 +39,10 @@ public class Reserva {
 
     @Column
     private Integer posicionEspera;
+
+    /** true = asistió, false = no asistió, null = aún no se ha marcado. */
+    @Column
+    private Boolean asistencia;
 
     public Reserva() {
     }
@@ -66,6 +72,8 @@ public class Reserva {
 
     public Integer getPosicionEspera() { return posicionEspera; }
 
+    public Boolean getAsistencia() { return asistencia; }
+
     // Setters
     public void setMiembroId(Long miembroId) { this.miembroId = miembroId; }
 
@@ -76,4 +84,6 @@ public class Reserva {
     public void setEstado(EstadoReserva estado) { this.estado = estado; }
 
     public void setPosicionEspera(Integer posicionEspera) { this.posicionEspera = posicionEspera; }
+
+    public void setAsistencia(Boolean asistencia) { this.asistencia = asistencia; }
 }
