@@ -7,8 +7,14 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Collection;
 
 public interface ReservaRepository extends JpaRepository<Reserva, Long> {
+
+    /** Conteo por miembro y rango INCLUSIVO, entre todas las clases, solo en los estados indicados. */
+    long countByMiembroIdAndFechaBetweenAndEstadoIn(Long miembroId, LocalDate inicio, LocalDate fin,
+                                                  Collection<EstadoReserva> estados);
+
 
     /** Cuántas reservas hay en un estado para una sesión (clase, fecha). Sirve para calcular el aforo. */
     long countByClaseIdAndFechaAndEstado(Long claseId, LocalDate fecha, EstadoReserva estado);

@@ -1,6 +1,7 @@
 package com.gymtrack.clases.web;
 
 import com.gymtrack.clases.domain.exception.ClaseNotFoundException;
+import com.gymtrack.clases.domain.exception.ReglaReservaIncumplidaException;
 import com.gymtrack.clases.domain.exception.EstadoReservaInvalidoException;
 import com.gymtrack.clases.domain.exception.FechaNoCorrespondeException;
 import com.gymtrack.clases.domain.exception.ReservaDuplicadaException;
@@ -29,6 +30,11 @@ import java.time.LocalDateTime;
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    @ExceptionHandler(ReglaReservaIncumplidaException.class)
+    public ResponseEntity<ErrorResponse> handleReglaReserva(ReglaReservaIncumplidaException ex, HttpServletRequest request) {
+        return construir(HttpStatus.CONFLICT, ex.getMessage(), request);
+    }
 
     @ExceptionHandler(ClaseNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleClaseNotFound(ClaseNotFoundException ex, HttpServletRequest request) {

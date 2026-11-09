@@ -119,4 +119,28 @@ class ReservaRepositoryTest {
         assertThrows(Exception.class,
                 () -> reservaRepository.saveAndFlush(reserva(clase, 5L, EstadoReserva.EN_ESPERA, null)));
     }
+
+    @Test
+    @DisplayName("Strategy cuenta confirmadas y espera, excluye canceladas, otros miembros y fechas fuera del rango")
+    void cuentaReglasPorMiembroYRangoInclusivo() {
+        Clase primera = guardarClase();
+        Clase segunda = guardarClase();
+        LocalDate lunes = LocalDate.of(2026, 11, 16);
+        LocalDate domingo = lunes.plusDays(6);
+        Reserva confirmada = reserva(primera, 10L, EstadoReserva.CONFIRMADA, null);
+        confirmada.setFecha(lunes);
+        Reserva espera = reserva(segunda, 10L, EstadoReserva.EN_ESPERA, 1);
+        espera.setFecha(domingo);
+        Reserva anterior = reserva(primera, 10L, EstadoReserva.CONFIRMADA, null);
+        anterior.setFecha(lunes.minusDays(1));
+        Reserva posterior = reserva(primera, 10L, EstadoReserva.CONFIRMADA, null);
+        posterior.setFecha(domingo.plusDays(1));
+        reservaRepository.saveAll(List.of(confirmada, espera, anterior, posterior,
+                reserva(primera, 10L, EstadoReserva.CANCELADA, null),
+                reserva(primera, 20L, EstadoReserva.CONFIRMADA, null)));
+        assertEquals(2, reservaRepository.countByMiembroIdAndFechaBetweenAndEstadoIn(
+                10L, lunes, domingo, Set.of(EstadoReserva.CONFIRMADA, EstadoReserva.EN_ESPERA)));
+        assertEquals(0, reservaRepository.countByMiembroIdAndFechaBetweenAndEstadoIn(
+                10L, MARTES_17, MARTES_17, Set.of(EstadoReserva.CONFIRMADA, EstadoReserva.EN_ESPERA)));
+    }
 }
