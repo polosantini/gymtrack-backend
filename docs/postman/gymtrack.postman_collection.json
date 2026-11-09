@@ -153,6 +153,63 @@
           }
         }
       ]
+    },
+    {
+      "name": "Clases y Reservas",
+      "item": [
+        {
+          "name": "Crear clase",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Spinning\",\n  \"instructor\": \"Carlos Ruiz\",\n  \"dias\": [\n    \"MARTES\",\n    \"JUEVES\"\n  ],\n  \"hora\": \"18:00\",\n  \"duracionMinutos\": 45,\n  \"aforo\": 3,\n  \"sala\": \"Sala 1\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "http://localhost:8082/api/clases",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["api", "clases"]
+            }
+          }
+        },
+        {
+          "name": "Listar clases (catálogo por fecha)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8082/api/clases?fecha=2026-11-17",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["api", "clases"],
+              "query": [
+                { "key": "fecha", "value": "2026-11-17" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Obtener clase por id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8082/api/clases/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["api", "clases", "1"]
+            }
+          }
+        }
+      ]
     }
   ]
 }
