@@ -44,4 +44,9 @@ public class MiembroController {
     public ResponseEntity<List<PlanResponse>> listarPlanes() {
         return ResponseEntity.ok(miembroService.listarPlanes());
     }
+
+    @GetMapping("/miembros/{id}/acceso")
+    public ResponseEntity<AccesoResponse> verificarAcceso(@PathVariable Long id) {
+        return ResponseEntity.ok(miembroService.verificarAcceso(id));
+    }
 }

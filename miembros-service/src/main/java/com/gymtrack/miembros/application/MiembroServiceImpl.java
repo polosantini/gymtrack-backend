@@ -109,6 +109,20 @@ public class MiembroServiceImpl implements MiembroService {
         return toResponse(guardada);
     }
 
+    @Override
+    public AccesoResponse verificarAcceso(Long id) {
+        Miembro miembro = miembroRepository.findById(id).orElseThrow(() -> new MiembroNotFoundException(id));
+        Membresia membresia = miembro.getMembresia();
+
+        if (membresia == null) {
+            return new AccesoResponse(false, null);
+        }
+        boolean activa = membresia.getEstado() == EstadoMembresia.ACTIVA;
+        String plan = membresia.getPlan().name();
+
+        return new AccesoResponse(activa, plan);
+    }
+
     private MembresiaResponse toResponse(Membresia m) {
         if (m == null) {
             return null;
