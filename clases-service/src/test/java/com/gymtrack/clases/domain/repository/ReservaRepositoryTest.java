@@ -12,6 +12,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -74,6 +75,40 @@ class ReservaRepositoryTest {
         assertEquals(2, reservaRepository.countByClaseIdAndFechaAndEstado(clase.getId(), MARTES_17, EstadoReserva.CONFIRMADA));
         assertEquals(1, reservaRepository.countByClaseIdAndFechaAndEstado(clase.getId(), MARTES_17, EstadoReserva.EN_ESPERA));
         assertEquals(0, reservaRepository.countByClaseIdAndFechaAndEstado(clase.getId(), MARTES_17.plusDays(2), EstadoReserva.CONFIRMADA));
+    }
+
+    @Test
+    @DisplayName("La lista de espera se ordena por posición, no por id")
+    void esperaOrdenadaPorPosicion() {
+        Clase clase = guardarClase();
+        // Se guardan en orden inverso a su posición: el id más bajo tiene la posición 2
+        reservaRepository.save(reserva(clase, 7L, EstadoReserva.EN_ESPERA, 2));
+        reservaRepository.save(reserva(clase, 8L, EstadoReserva.EN_ESPERA, 1));
+        reservaRepository.save(reserva(clase, 9L, EstadoReserva.CANCELADA, null));
+
+        List<Reserva> espera = reservaRepository.findByClaseIdAndFechaAndEstadoOrderByPosicionEsperaAsc(
+                clase.getId(), MARTES_17, EstadoReserva.EN_ESPERA);
+
+        assertEquals(2, espera.size());
+        assertEquals(8L, espera.get(0).getMiembroId());
+        assertEquals(7L, espera.get(1).getMiembroId());
+    }
+
+    @Test
+    @DisplayName("El historial del miembro va de la fecha más reciente a la más antigua e incluye canceladas")
+    void historialDelMiembro() {
+        Clase clase = guardarClase();
+        Reserva antigua = reserva(clase, 1L, EstadoReserva.CANCELADA, null);
+        antigua.setFecha(MARTES_17.minusDays(7));
+        reservaRepository.save(antigua);
+        reservaRepository.save(reserva(clase, 1L, EstadoReserva.CONFIRMADA, null));
+        reservaRepository.save(reserva(clase, 2L, EstadoReserva.CONFIRMADA, null));
+
+        List<Reserva> historial = reservaRepository.findByMiembroIdOrderByFechaDescIdDesc(1L);
+
+        assertEquals(2, historial.size());
+        assertEquals(MARTES_17, historial.get(0).getFecha());
+        assertEquals(EstadoReserva.CANCELADA, historial.get(1).getEstado());
     }
 
     @Test

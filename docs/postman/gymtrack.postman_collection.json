@@ -229,6 +229,40 @@
               "path": ["api", "reservas"]
             }
           }
+        },
+        {
+          "name": "Listar reservas por miembro",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8082/api/reservas?miembroId=1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["api", "reservas"],
+              "query": [
+                { "key": "miembroId", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reservas de una clase por fecha",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8082/api/clases/1/reservas?fecha=2026-11-17",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["api", "clases", "1", "reservas"],
+              "query": [
+                { "key": "fecha", "value": "2026-11-17" }
+              ]
+            }
+          }
         }
       ]
     }
