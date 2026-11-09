@@ -1,6 +1,6 @@
 package com.gymtrack.miembros.domain.model;
 
-public enum PlanMembresia {
+public enum TipoPlanMembresia {
     BASICO,
     FULL,
     PREMIUM;

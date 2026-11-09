@@ -13,7 +13,7 @@ public class Membresia {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private PlanMembresia plan;
+    private TipoPlanMembresia plan;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -44,7 +44,7 @@ public class Membresia {
         return id;
     }
 
-    public PlanMembresia getPlan() {
+    public TipoPlanMembresia getPlan() {
         return plan;
     }
 
@@ -61,7 +61,7 @@ public class Membresia {
     }
 
     // Setters
-    public void setPlan(PlanMembresia plan) {
+    public void setPlan(TipoPlanMembresia plan) {
         this.plan = plan;
     }
 

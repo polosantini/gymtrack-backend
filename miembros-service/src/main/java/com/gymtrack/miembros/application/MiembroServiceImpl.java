@@ -6,7 +6,9 @@ import com.gymtrack.miembros.domain.exception.PlanInvalidoException;
 import com.gymtrack.miembros.domain.model.EstadoMembresia;
 import com.gymtrack.miembros.domain.model.Membresia;
 import com.gymtrack.miembros.domain.model.Miembro;
-import com.gymtrack.miembros.domain.model.PlanMembresia;
+import com.gymtrack.miembros.domain.model.TipoPlanMembresia;
+import com.gymtrack.miembros.domain.plan.CreadorMembresia;
+import com.gymtrack.miembros.domain.plan.PlanMembresia;
 import com.gymtrack.miembros.domain.repository.MembresiaRepository;
 import com.gymtrack.miembros.domain.repository.MiembroRepository;
 import com.gymtrack.miembros.web.dto.*;
@@ -23,10 +25,12 @@ public class MiembroServiceImpl implements MiembroService {
 
     private final MiembroRepository miembroRepository;
     private final MembresiaRepository membresiaRepository;
+    private final CreadorMembresia creadorMembresia;
 
-    public MiembroServiceImpl(MiembroRepository miembroRepository, MembresiaRepository membresiaRepository) {
+    public MiembroServiceImpl(MiembroRepository miembroRepository, MembresiaRepository membresiaRepository, CreadorMembresia creadorMembresia) {
         this.miembroRepository = miembroRepository;
         this.membresiaRepository = membresiaRepository;
+        this.creadorMembresia = creadorMembresia;
     }
 
     @Override
@@ -87,9 +91,12 @@ public class MiembroServiceImpl implements MiembroService {
                 .orElseThrow(() -> new MiembroNotFoundException(miembroId));
 
 
-        PlanMembresia plan = parsePlan(request.plan());
+        TipoPlanMembresia tipo = parsePlan(request.plan());
+        PlanMembresia planComportamiento = creadorMembresia.crear(tipo);
+        int dias = planComportamiento.diasVigencia();
+
         LocalDate fechaInicio = LocalDate.now();
-        LocalDate fechaVencimiento = fechaInicio.plusDays(diasDelPlan(plan));
+        LocalDate fechaVencimiento = fechaInicio.plusDays(dias);
 
         if (miembro.getMembresia() != null) {
             Membresia membresiaAnterior = miembro.getMembresia();
@@ -98,7 +105,7 @@ public class MiembroServiceImpl implements MiembroService {
         }
 
         Membresia membresia = new Membresia();
-        membresia.setPlan(plan);
+        membresia.setPlan(tipo);
         membresia.setFechaInicio(fechaInicio);
         membresia.setFechaVencimiento(fechaVencimiento);
 
@@ -147,19 +154,12 @@ public class MiembroServiceImpl implements MiembroService {
         );
     }
 
-    private PlanMembresia parsePlan(String plan) {
+    private TipoPlanMembresia parsePlan(String plan) {
         try {
-            return PlanMembresia.valueOf(plan.toUpperCase());
+            return TipoPlanMembresia.valueOf(plan.toUpperCase());
         } catch (IllegalArgumentException e) {
             throw new PlanInvalidoException(plan);
         }
     }
 
-    private int diasDelPlan(PlanMembresia plan) {
-        return switch (plan) {
-            case BASICO -> 30;
-            case FULL -> 90;
-            case PREMIUM -> 365;
-        };
-    }
 }
