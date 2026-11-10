@@ -1,5 +1,8 @@
 package com.gymtrack.clases.web;
 
+import com.gymtrack.clases.domain.exception.MembresiaInactivaException;
+import com.gymtrack.clases.domain.exception.MiembroNoEncontradoException;
+import com.gymtrack.clases.domain.exception.MiembrosNoDisponibleException;
 import com.gymtrack.clases.domain.exception.ClaseNotFoundException;
 import com.gymtrack.clases.domain.exception.ReglaReservaIncumplidaException;
 import com.gymtrack.clases.domain.exception.EstadoReservaInvalidoException;
@@ -30,6 +33,21 @@ import java.time.LocalDateTime;
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    @ExceptionHandler(MembresiaInactivaException.class)
+    public ResponseEntity<ErrorResponse> handleMembresiaInactiva(MembresiaInactivaException ex, HttpServletRequest request) {
+        return construir(HttpStatus.CONFLICT, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(MiembrosNoDisponibleException.class)
+    public ResponseEntity<ErrorResponse> handleMiembrosNoDisponible(MiembrosNoDisponibleException ex, HttpServletRequest request) {
+        return construir(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(MiembroNoEncontradoException.class)
+    public ResponseEntity<ErrorResponse> handleMiembroNoEncontrado(MiembroNoEncontradoException ex, HttpServletRequest request) {
+        return construir(HttpStatus.NOT_FOUND, ex.getMessage(), request);
+    }
 
     @ExceptionHandler(ReglaReservaIncumplidaException.class)
     public ResponseEntity<ErrorResponse> handleReglaReserva(ReglaReservaIncumplidaException ex, HttpServletRequest request) {
