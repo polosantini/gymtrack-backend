@@ -1,6 +1,8 @@
 package com.gymtrack.clases.web;
 
 import com.gymtrack.clases.application.ClaseService;
+import com.gymtrack.clases.application.ClaseQueryService;
+import com.gymtrack.clases.web.dto.ReservasClaseResponse;
 import com.gymtrack.clases.web.dto.ClaseRequest;
 import com.gymtrack.clases.web.dto.ClaseResponse;
 import jakarta.validation.Valid;
@@ -18,8 +20,11 @@ public class ClaseController {
 
     private final ClaseService claseService;
 
-    public ClaseController(ClaseService claseService) {
+    private final ClaseQueryService claseQueryService;
+
+    public ClaseController(ClaseService claseService, ClaseQueryService claseQueryService) {
         this.claseService = claseService;
+        this.claseQueryService = claseQueryService;
     }
 
     @PostMapping("/clases")
@@ -30,11 +35,18 @@ public class ClaseController {
     @GetMapping("/clases")
     public ResponseEntity<List<ClaseResponse>> listar(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
-        return ResponseEntity.ok(claseService.listar(fecha));
+        return ResponseEntity.ok(claseQueryService.listar(fecha));
     }
 
     @GetMapping("/clases/{id}")
     public ResponseEntity<ClaseResponse> obtenerPorId(@PathVariable Long id) {
-        return ResponseEntity.ok(claseService.obtenerPorId(id));
+        return ResponseEntity.ok(claseQueryService.obtenerPorId(id));
     }
+    @GetMapping("/clases/{claseId}/reservas")
+    public ResponseEntity<ReservasClaseResponse> listarPorClaseYFecha(
+            @PathVariable Long claseId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
+        return ResponseEntity.ok(claseQueryService.listarPorClaseYFecha(claseId, fecha));
+    }
+
 }

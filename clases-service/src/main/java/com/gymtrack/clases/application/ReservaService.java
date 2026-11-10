@@ -15,9 +15,6 @@ public interface ReservaService {
     /** Reservas e historial de asistencia del miembro (incluye canceladas), de la más reciente a la más antigua. */
     List<ReservaResponse> listarPorMiembro(Long miembroId);
 
-    /** Confirmados y lista de espera (ordenada por posición) de una sesión (clase, fecha). */
-    ReservasClaseResponse listarPorClaseYFecha(Long claseId, LocalDate fecha);
-
     /** Cancela la reserva (estado CANCELADA). Si estaba en espera, los que venían detrás suben un puesto. */
     ReservaResponse cancelar(Long reservaId);
 
