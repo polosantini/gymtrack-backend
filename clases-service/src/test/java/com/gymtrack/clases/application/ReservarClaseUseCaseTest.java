@@ -35,7 +35,7 @@ class ReservarClaseUseCaseTest {
         ReflectionTestUtils.setField(clase, "id", 1L);
         clase.setNombre("Prueba"); clase.setAforo(1); clase.setHora(LocalTime.of(18, 0));
         clase.setDias(Set.of(DiaSemana.MARTES));
-        when(clases.findById(1L)).thenReturn(Optional.of(clase));
+        when(clases.findByIdForUpdate(1L)).thenReturn(Optional.of(clase));
     }
 
     @Test
@@ -43,7 +43,8 @@ class ReservarClaseUseCaseTest {
         when(reservas.save(any(Reserva.class))).thenAnswer(inv -> inv.getArgument(0));
         Reserva resultado = caso.ejecutar(new ReservaRequest(10L, 1L, fecha));
         assertEquals(EstadoReserva.CONFIRMADA, resultado.getEstado());
-        var orden = inOrder(regla, reservas);
+        var orden = inOrder(clases, regla, reservas);
+        orden.verify(clases).findByIdForUpdate(1L);
         orden.verify(regla).validar(10L, fecha);
         orden.verify(reservas).countByClaseIdAndFechaAndEstado(1L, fecha, EstadoReserva.CONFIRMADA);
         verify(regla, never()).plan(); // El caso de uso no resuelve el plan.

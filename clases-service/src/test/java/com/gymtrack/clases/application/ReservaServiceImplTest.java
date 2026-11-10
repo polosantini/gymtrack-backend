@@ -81,7 +81,7 @@ class ReservaServiceImplTest {
 
     private void claseExisteSinDuplicado(Long miembroId) {
         miembroActivo(miembroId);
-        when(claseRepository.findById(1L)).thenReturn(Optional.of(spinningAforo3()));
+        when(claseRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(spinningAforo3()));
         when(reservaRepository.existsByMiembroIdAndClaseIdAndFechaAndEstadoNot(
                 miembroId, 1L, MARTES_17, EstadoReserva.CANCELADA)).thenReturn(false);
         when(reservaRepository.save(any(Reserva.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -117,7 +117,7 @@ class ReservaServiceImplTest {
     @DisplayName("Clase inexistente lanza ClaseNotFoundException (404)")
     void claseInexistente() {
         miembroActivo(10L);
-        when(claseRepository.findById(99L)).thenReturn(Optional.empty());
+        when(claseRepository.findByIdForUpdate(99L)).thenReturn(Optional.empty());
 
         assertThrows(ClaseNotFoundException.class,
                 () -> reservaService.reservar(new ReservaRequest(10L, 99L, MARTES_17)));
@@ -127,7 +127,7 @@ class ReservaServiceImplTest {
     @DisplayName("Fecha que no es día de la clase lanza FechaNoCorrespondeException (400)")
     void fechaQueNoCorresponde() {
         miembroActivo(10L);
-        when(claseRepository.findById(1L)).thenReturn(Optional.of(spinningAforo3()));
+        when(claseRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(spinningAforo3()));
         LocalDate miercoles = MARTES_17.plusDays(1);
 
         assertThrows(FechaNoCorrespondeException.class,
@@ -250,7 +250,7 @@ class ReservaServiceImplTest {
     @DisplayName("Reserva repetida del mismo miembro, clase y fecha lanza ReservaDuplicadaException (409)")
     void reservaDuplicada() {
         miembroActivo(10L);
-        when(claseRepository.findById(1L)).thenReturn(Optional.of(spinningAforo3()));
+        when(claseRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(spinningAforo3()));
         when(reservaRepository.existsByMiembroIdAndClaseIdAndFechaAndEstadoNot(
                 10L, 1L, MARTES_17, EstadoReserva.CANCELADA)).thenReturn(true);
 
