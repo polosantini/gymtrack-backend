@@ -71,6 +71,10 @@ public class ReservaServiceImpl implements ReservaService {
 
     @Override
     public ReservaResponse cancelar(Long reservaId) {
+        Long claseId = reservaRepository.findClaseIdByReservaId(reservaId)
+                .orElseThrow(() -> new ReservaNotFoundException(reservaId));
+        claseRepository.findByIdForUpdate(claseId)
+                .orElseThrow(() -> new ClaseNotFoundException(claseId));
         Reserva reserva = buscarReserva(reservaId);
 
         if (reserva.getEstado() == EstadoReserva.CANCELADA) {
@@ -78,25 +82,16 @@ public class ReservaServiceImpl implements ReservaService {
         }
 
         EstadoReserva estadoAnterior = reserva.getEstado();
-        Integer posicionAnterior = reserva.getPosicionEspera();
 
         reserva.setEstado(EstadoReserva.CANCELADA);
         reserva.setPosicionEspera(null);
 
-        // Si se va alguien de la lista de espera, los que estaban detrás suben un puesto
-        // (así las posiciones siguen siendo 1, 2, 3... sin huecos ni repetidos).
-        if (estadoAnterior == EstadoReserva.EN_ESPERA && posicionAnterior != null) {
-            reservaRepository.findByClaseIdAndFechaAndEstadoOrderByPosicionEsperaAsc(
-                            reserva.getClase().getId(), reserva.getFecha(), EstadoReserva.EN_ESPERA)
-                    .stream()
-                    .filter(otra -> otra != reserva && otra.getPosicionEspera() > posicionAnterior)
-                    .forEach(otra -> otra.setPosicionEspera(otra.getPosicionEspera() - 1));
-        }
+        // Las posiciones de los demás son persistentes: cancelar deja un hueco, no renumera.
 
         boolean liberaCupo = estadoAnterior == EstadoReserva.CONFIRMADA;
         // TODO Fase 3 (Observer): publicar ReservaCancelada(reserva.getId(), claseId, fecha, liberaCupo)
         //      en el exchange gymtrack.events con la routing key EventosConfig.RK_RESERVA_CANCELADA.
-        // TODO Fase 2 (lista de espera): si liberaCupo es true, pasar a CONFIRMADA al primero en espera.
+        // La promoción y el evento de cupo asignado corresponden al consumidor de Fase 3 (#49).
 
         // No hace falta save(): la reserva está gestionada por JPA dentro de la transacción
         // y los cambios se guardan al terminar el método.

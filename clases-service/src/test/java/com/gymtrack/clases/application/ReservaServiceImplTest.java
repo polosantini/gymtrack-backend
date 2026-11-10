@@ -66,6 +66,11 @@ class ReservaServiceImplTest {
         when(miembrosClient.consultarAcceso(miembroId)).thenReturn(new AccesoMembresia(true, "PREMIUM"));
     }
 
+    private void bloqueoCancelacion(Long reservaId) {
+        when(reservaRepository.findClaseIdByReservaId(reservaId)).thenReturn(Optional.of(1L));
+        when(claseRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(spinningAforo3()));
+    }
+
     private Clase spinningAforo3() {
         Clase clase = new Clase();
         ReflectionTestUtils.setField(clase, "id", 1L);
@@ -106,6 +111,7 @@ class ReservaServiceImplTest {
         claseExisteSinDuplicado(10L);
         when(reservaRepository.countByClaseIdAndFechaAndEstado(1L, MARTES_17, EstadoReserva.CONFIRMADA)).thenReturn(3L);
         when(reservaRepository.countByClaseIdAndFechaAndEstado(1L, MARTES_17, EstadoReserva.EN_ESPERA)).thenReturn(1L);
+        when(reservaRepository.maxPosicionEspera(1L, MARTES_17, EstadoReserva.EN_ESPERA)).thenReturn(1);
 
         ReservaResponse respuesta = reservaService.reservar(new ReservaRequest(10L, 1L, MARTES_17));
 
@@ -169,6 +175,7 @@ class ReservaServiceImplTest {
     @Test
     @DisplayName("cancelar una reserva CONFIRMADA la deja CANCELADA")
     void cancelarConfirmada() {
+        bloqueoCancelacion(1L);
         Reserva confirmada = reserva(spinningAforo3(), 1L, EstadoReserva.CONFIRMADA, null);
         when(reservaRepository.findById(1L)).thenReturn(Optional.of(confirmada));
 
@@ -180,27 +187,30 @@ class ReservaServiceImplTest {
     }
 
     @Test
-    @DisplayName("cancelar una reserva EN_ESPERA hace subir un puesto a los que venían detrás")
-    void cancelarEnEsperaCorreLaFila() {
+    @DisplayName("cancelar una reserva EN_ESPERA conserva las posiciones de los demás")
+    void cancelarEnEsperaConservaPosiciones() {
+        bloqueoCancelacion(4L);
         Clase clase = spinningAforo3();
         Reserva primera = reserva(clase, 4L, EstadoReserva.EN_ESPERA, 1);
         Reserva segunda = reserva(clase, 5L, EstadoReserva.EN_ESPERA, 2);
         Reserva tercera = reserva(clase, 6L, EstadoReserva.EN_ESPERA, 3);
         when(reservaRepository.findById(4L)).thenReturn(Optional.of(primera));
-        when(reservaRepository.findByClaseIdAndFechaAndEstadoOrderByPosicionEsperaAsc(1L, MARTES_17, EstadoReserva.EN_ESPERA))
-                .thenReturn(List.of(segunda, tercera));
+
 
         ReservaResponse respuesta = reservaService.cancelar(4L);
 
         assertEquals("CANCELADA", respuesta.estado());
         assertNull(respuesta.posicionEspera());
-        assertEquals(1, segunda.getPosicionEspera());
-        assertEquals(2, tercera.getPosicionEspera());
+        assertEquals(2, segunda.getPosicionEspera());
+        assertEquals(3, tercera.getPosicionEspera());
+        verify(reservaRepository, never()).findByClaseIdAndFechaAndEstadoOrderByPosicionEsperaAsc(
+                1L, MARTES_17, EstadoReserva.EN_ESPERA);
     }
 
     @Test
     @DisplayName("cancelar una reserva ya CANCELADA lanza EstadoReservaInvalidoException (409)")
     void cancelarYaCancelada() {
+        bloqueoCancelacion(1L);
         when(reservaRepository.findById(1L))
                 .thenReturn(Optional.of(reserva(spinningAforo3(), 1L, EstadoReserva.CANCELADA, null)));
 
@@ -210,7 +220,7 @@ class ReservaServiceImplTest {
     @Test
     @DisplayName("cancelar una reserva inexistente lanza ReservaNotFoundException (404)")
     void cancelarInexistente() {
-        when(reservaRepository.findById(99L)).thenReturn(Optional.empty());
+        when(reservaRepository.findClaseIdByReservaId(99L)).thenReturn(Optional.empty());
 
         assertThrows(ReservaNotFoundException.class, () -> reservaService.cancelar(99L));
     }
