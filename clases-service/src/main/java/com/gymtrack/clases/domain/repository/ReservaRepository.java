@@ -4,12 +4,26 @@ import com.gymtrack.clases.domain.model.EstadoReserva;
 import com.gymtrack.clases.domain.model.Reserva;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import java.util.Optional;
 
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Collection;
 
 public interface ReservaRepository extends JpaRepository<Reserva, Long> {
+
+    /** Posición mayor de la cola activa: los huecos de cancelaciones no deben crear empates. */
+    @Query("select coalesce(max(r.posicionEspera), 0) from Reserva r where r.clase.id = :claseId "
+            + "and r.fecha = :fecha and r.estado = :estado")
+    int maxPosicionEspera(@Param("claseId") Long claseId, @Param("fecha") LocalDate fecha,
+                         @Param("estado") EstadoReserva estado);
+
+    /** Solo el id, para tomar el lock de la clase antes de cargar/modificar una reserva. */
+    @Query("select r.clase.id from Reserva r where r.id = :reservaId")
+    Optional<Long> findClaseIdByReservaId(@Param("reservaId") Long reservaId);
+
 
     /** Conteo por miembro y rango INCLUSIVO, entre todas las clases, solo en los estados indicados. */
     long countByMiembroIdAndFechaBetweenAndEstadoIn(Long miembroId, LocalDate inicio, LocalDate fin,

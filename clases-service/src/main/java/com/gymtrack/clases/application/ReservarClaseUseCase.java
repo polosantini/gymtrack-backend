@@ -54,13 +54,16 @@ public class ReservarClaseUseCase {
         reserva.setClase(clase);
         reserva.setFecha(request.fecha());
 
-        if (confirmadas < clase.getAforo()) {
+        long enEspera = reservaRepository.countByClaseIdAndFechaAndEstado(
+                clase.getId(), request.fecha(), EstadoReserva.EN_ESPERA);
+        // Mientras haya cola, una llegada nueva no toma un cupo liberado por delante de ella.
+        if (confirmadas < clase.getAforo() && enEspera == 0) {
             reserva.setEstado(EstadoReserva.CONFIRMADA);
         } else {
-            long enEspera = reservaRepository.countByClaseIdAndFechaAndEstado(
-                    clase.getId(), request.fecha(), EstadoReserva.EN_ESPERA);
             reserva.setEstado(EstadoReserva.EN_ESPERA);
-            reserva.setPosicionEspera((int) enEspera + 1);
+            int ultimaPosicion = reservaRepository.maxPosicionEspera(
+                    clase.getId(), request.fecha(), EstadoReserva.EN_ESPERA);
+            reserva.setPosicionEspera(Math.addExact(ultimaPosicion, 1));
         }
 
         return reservaRepository.save(reserva);
