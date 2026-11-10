@@ -29,7 +29,7 @@ public class ReservarClaseUseCase {
     }
 
     public Reserva ejecutar(ReservaRequest request) {
-        Clase clase = claseRepository.findById(request.claseId())
+        Clase clase = claseRepository.findByIdForUpdate(request.claseId())
                 .orElseThrow(() -> new ClaseNotFoundException(request.claseId()));
 
         if (!clase.seDictaEl(request.fecha())) {
@@ -44,8 +44,7 @@ public class ReservarClaseUseCase {
         }
 
         reglas.validar(request.miembroId(), request.fecha());
-        // TODO Fase 2 (#27 del plan): bloquear la sesión (clase, fecha) con lock pesimista para que dos reservas
-        //      simultáneas no superen el aforo. Hoy el conteo y el guardado no están protegidos contra concurrencia.
+        // La clase ya está bloqueada. El servicio mantiene esta transacción hasta guardar.
 
         long confirmadas = reservaRepository.countByClaseIdAndFechaAndEstado(
                 clase.getId(), request.fecha(), EstadoReserva.CONFIRMADA);
