@@ -1,10 +1,10 @@
 -- Datos de demo de clases-service (issue #18).
 -- Se cargan al arrancar el servicio. ON CONFLICT DO NOTHING evita duplicarlos si ya existen.
--- Para dejarlos limpios: docker compose down -v && docker compose up -d, y volver a arrancar clases-service.
+-- La corrección de la reserva 5 también se aplica a datos de demo ya cargados, sin borrar la BD.
 --
 -- miembroId (referencia lógica a miembros-service, data.sql de A):
 --   1 = Ana (BASICO), 2 = Luis (FULL), 3 = Sara (PREMIUM)
---   4 = miembro en lista de espera  <-- CONFIRMAR con A que exista en miembros-service
+--   4 = Diego (BASICO, ACTIVA), 6 = María (PREMIUM, ACTIVA)
 --
 -- 2026-11-17 es martes (semana de la demo).
 
@@ -20,12 +20,24 @@ INSERT INTO reserva (id, miembro_id, clase_id, fecha, estado, posicion_espera, a
     (2, 2, 1, '2026-11-17', 'CONFIRMADA', NULL, NULL),
     (3, 3, 1, '2026-11-17', 'CONFIRMADA', NULL, NULL),
     (4, 4, 1, '2026-11-17', 'EN_ESPERA',  1,    NULL),
-    -- Yoga el martes 17: 1 de 10 ocupado, queda cupo libre para la reserva exitosa de la demo
-    (5, 2, 2, '2026-11-17', 'CONFIRMADA', NULL, NULL),
+    -- Yoga el martes 17: María (PREMIUM), 1 de 10 ocupado; Luis conserva solo Spinning ese día
+    (5, 6, 2, '2026-11-17', 'CONFIRMADA', NULL, NULL),
     -- Historial de asistencia (Spinning del martes 10)
     (6, 1, 1, '2026-11-10', 'CONFIRMADA', NULL, TRUE),
     (7, 2, 1, '2026-11-10', 'CONFIRMADA', NULL, FALSE)
     ON CONFLICT (id) DO NOTHING;
+
+-- Corregir exclusivamente la reserva original de Yoga de la demo si ya estaba cargada.
+-- ON CONFLICT DO NOTHING no modifica filas existentes. La condición evita tocar otros registros.
+UPDATE reserva
+SET miembro_id = 6
+WHERE id = 5
+  AND miembro_id = 2
+  AND clase_id = 2
+  AND fecha = '2026-11-17'
+  AND estado = 'CONFIRMADA'
+  AND posicion_espera IS NULL
+  AND asistencia IS NULL;
 
 SELECT setval('clase_id_seq',   (SELECT MAX(id) FROM clase));
 SELECT setval('reserva_id_seq', (SELECT MAX(id) FROM reserva));
