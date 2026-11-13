@@ -27,6 +27,7 @@ class ListaEsperaEstableTest {
     @Autowired private ClaseRepository clases;
     @Autowired private ReservaRepository reservas;
     @MockBean private MiembrosClient miembros;
+    @MockBean private org.springframework.amqp.rabbit.core.RabbitTemplate rabbitTemplate;
     private final LocalDate fecha = LocalDate.of(2026, 11, 17);
     private Long claseId;
 

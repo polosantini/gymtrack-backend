@@ -1,0 +1,515 @@
+{
+  "info": {
+    "name": "GymTrack B #33 - Observer cancelación",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Ejecutar SOLO con reservas de prueba: cancela las reservas indicadas. Deben ser de la misma clase/fecha, una CONFIRMADA y otra EN_ESPERA. La primera ejecución sirve con los ids 1 y 4 del seed original. Repetir con reservas nuevas. Esta colección prueba el publicador #48 antes de integrar el consumidor #49. Usa una cola de evidencia independiente que se elimina al terminar."
+  },
+  "variable": [
+    {
+      "key": "clasesUrl",
+      "value": "http://localhost:8082"
+    },
+    {
+      "key": "rabbitUrl",
+      "value": "http://localhost:15672"
+    },
+    {
+      "key": "rabbitUser",
+      "value": "gymtrack"
+    },
+    {
+      "key": "rabbitPassword",
+      "value": "gymtrack"
+    },
+    {
+      "key": "reservaConfirmada",
+      "value": "1"
+    },
+    {
+      "key": "reservaEnEspera",
+      "value": "4"
+    },
+    {
+      "key": "colaEvidencia",
+      "value": "gymtrack.observer.evidencia.manual"
+    }
+  ],
+  "item": [
+    {
+      "name": "01 - Declarar exchange del contrato",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{rabbitUrl}}/api/exchanges/%2F/gymtrack.events",
+        "auth": {
+          "type": "basic",
+          "basic": [
+            {
+              "key": "username",
+              "value": "{{rabbitUser}}",
+              "type": "string"
+            },
+            {
+              "key": "password",
+              "value": "{{rabbitPassword}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"type\": \"topic\",\n  \"durable\": true,\n  \"auto_delete\": false,\n  \"internal\": false,\n  \"arguments\": {}\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Estado HTTP esperado\", () => pm.expect(pm.response.code).to.be.oneOf([201, 204]));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 - Crear cola temporal de evidencia",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{rabbitUrl}}/api/queues/%2F/{{colaEvidencia}}",
+        "auth": {
+          "type": "basic",
+          "basic": [
+            {
+              "key": "username",
+              "value": "{{rabbitUser}}",
+              "type": "string"
+            },
+            {
+              "key": "password",
+              "value": "{{rabbitPassword}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"durable\": false,\n  \"auto_delete\": false,\n  \"arguments\": {}\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Estado HTTP esperado\", () => pm.expect(pm.response.code).to.be.oneOf([201, 204]));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 - Enlazar reserva.cancelada con puntos",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{rabbitUrl}}/api/bindings/%2F/e/gymtrack.events/q/{{colaEvidencia}}",
+        "auth": {
+          "type": "basic",
+          "basic": [
+            {
+              "key": "username",
+              "value": "{{rabbitUser}}",
+              "type": "string"
+            },
+            {
+              "key": "password",
+              "value": "{{rabbitPassword}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"routing_key\": \"reserva.cancelada\",\n  \"arguments\": {}\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Estado HTTP esperado\", () => pm.expect(pm.response.code).to.be.oneOf([201]));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 - Vaciar solo la cola de evidencia",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": "{{rabbitUrl}}/api/queues/%2F/{{colaEvidencia}}/contents",
+        "auth": {
+          "type": "basic",
+          "basic": [
+            {
+              "key": "username",
+              "value": "{{rabbitUser}}",
+              "type": "string"
+            },
+            {
+              "key": "password",
+              "value": "{{rabbitPassword}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Estado HTTP esperado\", () => pm.expect(pm.response.code).to.be.oneOf([204]));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 - Cancelar reserva CONFIRMADA",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": "{{clasesUrl}}/api/reservas/{{reservaConfirmada}}/cancelar"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Estado HTTP esperado\", () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+              "const r=pm.response.json();",
+              "pm.test(\"Estado cancelado\",()=>pm.expect(r.estado).to.eql(\"CANCELADA\"));",
+              "pm.collectionVariables.set(\"claseEvidencia\",r.claseId);",
+              "pm.collectionVariables.set(\"fechaEvidencia\",r.fecha);",
+              "pm.collectionVariables.set(\"reservaConfirmadaEvento\",r.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 - Confirmar evento liberaCupo=true",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{rabbitUrl}}/api/queues/%2F/{{colaEvidencia}}/get",
+        "auth": {
+          "type": "basic",
+          "basic": [
+            {
+              "key": "username",
+              "value": "{{rabbitUser}}",
+              "type": "string"
+            },
+            {
+              "key": "password",
+              "value": "{{rabbitPassword}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"count\": 10,\n  \"ackmode\": \"ack_requeue_false\",\n  \"encoding\": \"auto\",\n  \"truncate\": 10000\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Estado HTTP esperado\", () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+              "const mensajes=pm.response.json();",
+              "pm.test(\"Un evento\",()=>pm.expect(mensajes.length).to.eql(1));",
+              "if(mensajes.length===1){",
+              " const mensaje=mensajes[0], evento=JSON.parse(mensaje.payload);",
+              " pm.test(\"Exchange y routing key\",()=>{pm.expect(mensaje.exchange).to.eql(\"gymtrack.events\");pm.expect(mensaje.routing_key).to.eql(\"reserva.cancelada\");});",
+              " pm.test(\"JSON y formato\",()=>{pm.expect(mensaje.properties.content_type).to.eql(\"application/json\");pm.expect(evento).to.have.all.keys(\"reservaId\",\"claseId\",\"fecha\",\"liberaCupo\");pm.expect(evento.fecha).to.match(/^\\d{4}-\\d{2}-\\d{2}$/);});",
+              " pm.test(\"Payload exacto\",()=>{pm.expect(evento.reservaId).to.eql(Number(pm.collectionVariables.get(\"reservaConfirmadaEvento\")));pm.expect(evento.claseId).to.eql(Number(pm.collectionVariables.get(\"claseEvidencia\")));pm.expect(evento.fecha).to.eql(pm.collectionVariables.get(\"fechaEvidencia\"));pm.expect(evento.liberaCupo).to.eql(true);});",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 - Comprobar que el endpoint no asignó el cupo",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{clasesUrl}}/api/clases/{{claseEvidencia}}/reservas?fecha={{fechaEvidencia}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Estado HTTP esperado\", () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+              "const r=pm.response.json();",
+              "pm.test(\"La reserva en espera sigue esperando\",()=>pm.expect(r.enEspera.some(x=>x.id===Number(pm.collectionVariables.get(\"reservaEnEspera\")))).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 - Cancelar reserva EN_ESPERA",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": "{{clasesUrl}}/api/reservas/{{reservaEnEspera}}/cancelar"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Estado HTTP esperado\", () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+              "const r=pm.response.json();pm.test(\"Cancelada sin posición\",()=>{pm.expect(r.estado).to.eql(\"CANCELADA\");pm.expect(r.posicionEspera).to.eql(null);});pm.collectionVariables.set(\"reservaEsperaEvento\",r.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 - Confirmar evento liberaCupo=false",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{rabbitUrl}}/api/queues/%2F/{{colaEvidencia}}/get",
+        "auth": {
+          "type": "basic",
+          "basic": [
+            {
+              "key": "username",
+              "value": "{{rabbitUser}}",
+              "type": "string"
+            },
+            {
+              "key": "password",
+              "value": "{{rabbitPassword}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"count\": 10,\n  \"ackmode\": \"ack_requeue_false\",\n  \"encoding\": \"auto\",\n  \"truncate\": 10000\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Estado HTTP esperado\", () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+              "const mensajes=pm.response.json();",
+              "pm.test(\"Un evento\",()=>pm.expect(mensajes.length).to.eql(1));",
+              "if(mensajes.length===1){",
+              " const mensaje=mensajes[0], evento=JSON.parse(mensaje.payload);",
+              " pm.test(\"Exchange y routing key\",()=>{pm.expect(mensaje.exchange).to.eql(\"gymtrack.events\");pm.expect(mensaje.routing_key).to.eql(\"reserva.cancelada\");});",
+              " pm.test(\"JSON y formato\",()=>{pm.expect(mensaje.properties.content_type).to.eql(\"application/json\");pm.expect(evento).to.have.all.keys(\"reservaId\",\"claseId\",\"fecha\",\"liberaCupo\");pm.expect(evento.fecha).to.match(/^\\d{4}-\\d{2}-\\d{2}$/);});",
+              " pm.test(\"Payload exacto\",()=>{pm.expect(evento.reservaId).to.eql(Number(pm.collectionVariables.get(\"reservaEsperaEvento\")));pm.expect(evento.claseId).to.eql(Number(pm.collectionVariables.get(\"claseEvidencia\")));pm.expect(evento.fecha).to.eql(pm.collectionVariables.get(\"fechaEvidencia\"));pm.expect(evento.liberaCupo).to.eql(false);});",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 - Cancelar otra vez devuelve 409",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": "{{clasesUrl}}/api/reservas/{{reservaConfirmada}}/cancelar"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Estado HTTP esperado\", () => pm.expect(pm.response.code).to.be.oneOf([409]));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "11 - Reserva inexistente devuelve 404",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": "{{clasesUrl}}/api/reservas/999999999/cancelar"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Estado HTTP esperado\", () => pm.expect(pm.response.code).to.be.oneOf([404]));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "12 - No se publicaron eventos por los errores",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{rabbitUrl}}/api/queues/%2F/{{colaEvidencia}}/get",
+        "auth": {
+          "type": "basic",
+          "basic": [
+            {
+              "key": "username",
+              "value": "{{rabbitUser}}",
+              "type": "string"
+            },
+            {
+              "key": "password",
+              "value": "{{rabbitPassword}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"count\": 10,\n  \"ackmode\": \"ack_requeue_false\",\n  \"encoding\": \"auto\",\n  \"truncate\": 10000\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Estado HTTP esperado\", () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+              "pm.test(\"Sin eventos extra\",()=>pm.expect(pm.response.json()).to.eql([]));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "13 - Eliminar solo la cola de evidencia",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": "{{rabbitUrl}}/api/queues/%2F/{{colaEvidencia}}",
+        "auth": {
+          "type": "basic",
+          "basic": [
+            {
+              "key": "username",
+              "value": "{{rabbitUser}}",
+              "type": "string"
+            },
+            {
+              "key": "password",
+              "value": "{{rabbitPassword}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Estado HTTP esperado\", () => pm.expect(pm.response.code).to.be.oneOf([204]));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
