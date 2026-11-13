@@ -1,0 +1,722 @@
+{
+  "info": {
+    "name": "GymTrack B #34 - Asignación de cupo",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Requiere clase llena y exactamente una reserva EN_ESPERA, como el seed original de Spinning. Usa dos reservas CONFIRMADA de esa sesión. Cancela ambas. El consumidor #49 debe estar activo. Repetir con datos nuevos. No toca colas de negocio ni modifica Pagos."
+  },
+  "variable": [
+    {
+      "key": "clasesUrl",
+      "value": "http://localhost:8082"
+    },
+    {
+      "key": "rabbitUrl",
+      "value": "http://localhost:15672"
+    },
+    {
+      "key": "rabbitUser",
+      "value": "gymtrack"
+    },
+    {
+      "key": "rabbitPassword",
+      "value": "gymtrack"
+    },
+    {
+      "key": "colaEvidencia",
+      "value": "gymtrack.cupo.evidencia.manual"
+    },
+    {
+      "key": "claseId",
+      "value": "1"
+    },
+    {
+      "key": "fecha",
+      "value": "2026-11-17"
+    },
+    {
+      "key": "reservaConfirmada",
+      "value": "1"
+    },
+    {
+      "key": "otraConfirmada",
+      "value": "2"
+    }
+  ],
+  "item": [
+    {
+      "name": "01 - Crear cola independiente para avisos",
+      "request": {
+        "method": "PUT",
+        "url": "{{rabbitUrl}}/api/queues/%2F/{{colaEvidencia}}",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "auth": {
+          "type": "basic",
+          "basic": [
+            {
+              "key": "username",
+              "value": "{{rabbitUser}}",
+              "type": "string"
+            },
+            {
+              "key": "password",
+              "value": "{{rabbitPassword}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"durable\": false,\n  \"auto_delete\": false,\n  \"arguments\": {}\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP esperado\",()=>pm.expect(pm.response.code).to.be.oneOf([201, 204]));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 - Enlazar reserva.cupo.asignado",
+      "request": {
+        "method": "POST",
+        "url": "{{rabbitUrl}}/api/bindings/%2F/e/gymtrack.events/q/{{colaEvidencia}}",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "auth": {
+          "type": "basic",
+          "basic": [
+            {
+              "key": "username",
+              "value": "{{rabbitUser}}",
+              "type": "string"
+            },
+            {
+              "key": "password",
+              "value": "{{rabbitPassword}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"routing_key\": \"reserva.cupo.asignado\",\n  \"arguments\": {}\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP esperado\",()=>pm.expect(pm.response.code).to.be.oneOf([201]));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 - Limpiar solo cola de evidencia",
+      "request": {
+        "method": "DELETE",
+        "url": "{{rabbitUrl}}/api/queues/%2F/{{colaEvidencia}}/contents",
+        "header": [],
+        "auth": {
+          "type": "basic",
+          "basic": [
+            {
+              "key": "username",
+              "value": "{{rabbitUser}}",
+              "type": "string"
+            },
+            {
+              "key": "password",
+              "value": "{{rabbitPassword}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP esperado\",()=>pm.expect(pm.response.code).to.be.oneOf([204]));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 - Verificar clase llena y una persona en espera",
+      "request": {
+        "method": "GET",
+        "url": "{{clasesUrl}}/api/clases/{{claseId}}/reservas?fecha={{fecha}}",
+        "header": []
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP esperado\",()=>pm.expect(pm.response.code).to.be.oneOf([200]));",
+              "const r=pm.response.json();",
+              "pm.test(\"Fixture lleno y una espera\",()=>{pm.expect(r.confirmados.length).to.eql(r.aforo);pm.expect(r.enEspera.length).to.eql(1);});",
+              "if(r.enEspera.length){pm.collectionVariables.set(\"esperaId\",r.enEspera[0].id);pm.collectionVariables.set(\"miembroAviso\",r.enEspera[0].miembroId);}",
+              "pm.collectionVariables.set(\"claseNombre\",r.claseNombre);pm.collectionVariables.set(\"hora\",r.hora);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 - Cancelar confirmada, publica Observer",
+      "request": {
+        "method": "PATCH",
+        "url": "{{clasesUrl}}/api/reservas/{{reservaConfirmada}}/cancelar",
+        "header": []
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP esperado\",()=>pm.expect(pm.response.code).to.be.oneOf([200]));",
+              "pm.test(\"Cancelada\",()=>pm.expect(pm.response.json().estado).to.eql(\"CANCELADA\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 - Esperar asignación asíncrona y validar aforo",
+      "request": {
+        "method": "GET",
+        "url": "{{clasesUrl}}/api/clases/{{claseId}}/reservas?fecha={{fecha}}",
+        "header": []
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP esperado\",()=>pm.expect(pm.response.code).to.be.oneOf([200]));",
+              "function validar(r){",
+              " pm.test(\"Primera espera confirmada\",()=>pm.expect(r.confirmados.some(x=>x.id===Number(pm.collectionVariables.get(\"esperaId\")))).to.eql(true));",
+              " pm.test(\"Sin sobreventa ni espera restante\",()=>{pm.expect(r.confirmados.length).to.eql(r.aforo);pm.expect(r.enEspera.length).to.eql(0);});",
+              "}",
+              "function buscar(intentos){pm.sendRequest(pm.variables.replaceIn(\"{{clasesUrl}}/api/clases/{{claseId}}/reservas?fecha={{fecha}}\"),(err,res)=>{",
+              " if(err){pm.test(\"Consulta válida\",()=>{throw err;});return;}",
+              " const r=res.json();if(r.confirmados.some(x=>x.id===Number(pm.collectionVariables.get(\"esperaId\")))){validar(r);return;}",
+              " if(intentos<=0){validar(r);return;}setTimeout(()=>buscar(intentos-1),100);",
+              "});}",
+              "buscar(40);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 - Comprobar aviso exacto",
+      "request": {
+        "method": "POST",
+        "url": "{{rabbitUrl}}/api/queues/%2F/{{colaEvidencia}}/get",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "auth": {
+          "type": "basic",
+          "basic": [
+            {
+              "key": "username",
+              "value": "{{rabbitUser}}",
+              "type": "string"
+            },
+            {
+              "key": "password",
+              "value": "{{rabbitPassword}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"count\": 10,\n  \"ackmode\": \"ack_requeue_false\",\n  \"encoding\": \"auto\",\n  \"truncate\": 10000\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP esperado\",()=>pm.expect(pm.response.code).to.be.oneOf([200]));",
+              "const mensajes=pm.response.json();pm.test(\"Un único aviso\",()=>pm.expect(mensajes.length).to.eql(1));",
+              "if(mensajes.length===1){const m=mensajes[0],e=JSON.parse(m.payload);",
+              " pm.test(\"Routing key y JSON\",()=>{pm.expect(m.routing_key).to.eql(\"reserva.cupo.asignado\");pm.expect(m.exchange).to.eql(\"gymtrack.events\");pm.expect(m.properties.content_type).to.eql(\"application/json\");pm.expect(m.properties.message_id).to.eql(\"reserva.cupo.asignado:\"+pm.collectionVariables.get(\"reservaConfirmada\"));});",
+              " pm.test(\"Contrato exacto\",()=>{pm.expect(e).to.have.all.keys(\"miembroId\",\"claseNombre\",\"fecha\",\"hora\");pm.expect(e.miembroId).to.eql(Number(pm.collectionVariables.get(\"miembroAviso\")));pm.expect(e.claseNombre).to.eql(pm.collectionVariables.get(\"claseNombre\"));pm.expect(e.fecha).to.eql(pm.collectionVariables.get(\"fecha\"));pm.expect(e.hora).to.eql(pm.collectionVariables.get(\"hora\"));});",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 - Repetir evento original (idempotencia)",
+      "request": {
+        "method": "POST",
+        "url": "{{rabbitUrl}}/api/exchanges/%2F/gymtrack.events/publish",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "auth": {
+          "type": "basic",
+          "basic": [
+            {
+              "key": "username",
+              "value": "{{rabbitUser}}",
+              "type": "string"
+            },
+            {
+              "key": "password",
+              "value": "{{rabbitPassword}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"properties\": {\n    \"content_type\": \"application/json\",\n    \"delivery_mode\": 2\n  },\n  \"routing_key\": \"reserva.cancelada\",\n  \"payload\": \"{\\\"reservaId\\\": {{reservaConfirmada}}, \\\"claseId\\\": {{claseId}}, \\\"fecha\\\": \\\"{{fecha}}\\\", \\\"liberaCupo\\\": true}\",\n  \"payload_encoding\": \"string\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP esperado\",()=>pm.expect(pm.response.code).to.be.oneOf([200]));",
+              "pm.test(\"Entregado a una cola\",()=>pm.expect(pm.response.json().routed).to.eql(true));",
+              "setTimeout(()=>{},250);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 - Duplicado sin otro aviso",
+      "request": {
+        "method": "POST",
+        "url": "{{rabbitUrl}}/api/queues/%2F/{{colaEvidencia}}/get",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "auth": {
+          "type": "basic",
+          "basic": [
+            {
+              "key": "username",
+              "value": "{{rabbitUser}}",
+              "type": "string"
+            },
+            {
+              "key": "password",
+              "value": "{{rabbitPassword}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"count\": 10,\n  \"ackmode\": \"ack_requeue_false\",\n  \"encoding\": \"auto\",\n  \"truncate\": 10000\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP esperado\",()=>pm.expect(pm.response.code).to.be.oneOf([200]));",
+              "pm.test(\"Sin avisos duplicados\",()=>pm.expect(pm.response.json()).to.eql([]));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 - Inyectar liberaCupo=false (debe ignorarse)",
+      "request": {
+        "method": "POST",
+        "url": "{{rabbitUrl}}/api/exchanges/%2F/gymtrack.events/publish",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "auth": {
+          "type": "basic",
+          "basic": [
+            {
+              "key": "username",
+              "value": "{{rabbitUser}}",
+              "type": "string"
+            },
+            {
+              "key": "password",
+              "value": "{{rabbitPassword}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"properties\": {\n    \"content_type\": \"application/json\",\n    \"delivery_mode\": 2\n  },\n  \"routing_key\": \"reserva.cancelada\",\n  \"payload\": \"{\\\"reservaId\\\": {{reservaConfirmada}}, \\\"claseId\\\": {{claseId}}, \\\"fecha\\\": \\\"{{fecha}}\\\", \\\"liberaCupo\\\": false}\",\n  \"payload_encoding\": \"string\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP esperado\",()=>pm.expect(pm.response.code).to.be.oneOf([200]));",
+              "pm.test(\"Entregado a una cola\",()=>pm.expect(pm.response.json().routed).to.eql(true));",
+              "setTimeout(()=>{},250);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "11 - False sin aviso",
+      "request": {
+        "method": "POST",
+        "url": "{{rabbitUrl}}/api/queues/%2F/{{colaEvidencia}}/get",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "auth": {
+          "type": "basic",
+          "basic": [
+            {
+              "key": "username",
+              "value": "{{rabbitUser}}",
+              "type": "string"
+            },
+            {
+              "key": "password",
+              "value": "{{rabbitPassword}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"count\": 10,\n  \"ackmode\": \"ack_requeue_false\",\n  \"encoding\": \"auto\",\n  \"truncate\": 10000\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP esperado\",()=>pm.expect(pm.response.code).to.be.oneOf([200]));",
+              "pm.test(\"Sin avisos\",()=>pm.expect(pm.response.json()).to.eql([]));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "12 - Cancelar otra confirmada sin espera",
+      "request": {
+        "method": "PATCH",
+        "url": "{{clasesUrl}}/api/reservas/{{otraConfirmada}}/cancelar",
+        "header": []
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP esperado\",()=>pm.expect(pm.response.code).to.be.oneOf([200]));",
+              "setTimeout(()=>{},250);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "13 - Cola vacía sin aviso",
+      "request": {
+        "method": "POST",
+        "url": "{{rabbitUrl}}/api/queues/%2F/{{colaEvidencia}}/get",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "auth": {
+          "type": "basic",
+          "basic": [
+            {
+              "key": "username",
+              "value": "{{rabbitUser}}",
+              "type": "string"
+            },
+            {
+              "key": "password",
+              "value": "{{rabbitPassword}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"count\": 10,\n  \"ackmode\": \"ack_requeue_false\",\n  \"encoding\": \"auto\",\n  \"truncate\": 10000\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP esperado\",()=>pm.expect(pm.response.code).to.be.oneOf([200]));",
+              "pm.test(\"Sin aviso con cola vacía\",()=>pm.expect(pm.response.json()).to.eql([]));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "14 - Repetir cancelación sin espera",
+      "request": {
+        "method": "POST",
+        "url": "{{rabbitUrl}}/api/exchanges/%2F/gymtrack.events/publish",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "auth": {
+          "type": "basic",
+          "basic": [
+            {
+              "key": "username",
+              "value": "{{rabbitUser}}",
+              "type": "string"
+            },
+            {
+              "key": "password",
+              "value": "{{rabbitPassword}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"properties\": {\n    \"content_type\": \"application/json\",\n    \"delivery_mode\": 2\n  },\n  \"routing_key\": \"reserva.cancelada\",\n  \"payload\": \"{\\\"reservaId\\\": {{otraConfirmada}}, \\\"claseId\\\": {{claseId}}, \\\"fecha\\\": \\\"{{fecha}}\\\", \\\"liberaCupo\\\": true}\",\n  \"payload_encoding\": \"string\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP esperado\",()=>pm.expect(pm.response.code).to.be.oneOf([200]));",
+              "pm.test(\"Entregado a una cola\",()=>pm.expect(pm.response.json().routed).to.eql(true));",
+              "setTimeout(()=>{},250);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "15 - Comprobar estado final y aforo",
+      "request": {
+        "method": "GET",
+        "url": "{{clasesUrl}}/api/clases/{{claseId}}/reservas?fecha={{fecha}}",
+        "header": []
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP esperado\",()=>pm.expect(pm.response.code).to.be.oneOf([200]));",
+              "const r=pm.response.json();pm.test(\"Sin doble asignación\",()=>{pm.expect(r.confirmados.length).to.eql(r.aforo-1);pm.expect(r.enEspera.length).to.eql(0);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "16 - Sin avisos tardíos adicionales",
+      "request": {
+        "method": "POST",
+        "url": "{{rabbitUrl}}/api/queues/%2F/{{colaEvidencia}}/get",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "auth": {
+          "type": "basic",
+          "basic": [
+            {
+              "key": "username",
+              "value": "{{rabbitUser}}",
+              "type": "string"
+            },
+            {
+              "key": "password",
+              "value": "{{rabbitPassword}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"count\": 10,\n  \"ackmode\": \"ack_requeue_false\",\n  \"encoding\": \"auto\",\n  \"truncate\": 10000\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP esperado\",()=>pm.expect(pm.response.code).to.be.oneOf([200]));",
+              "pm.test(\"Cola vacía\",()=>pm.expect(pm.response.json()).to.eql([]));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "17 - Eliminar solo cola de evidencia",
+      "request": {
+        "method": "DELETE",
+        "url": "{{rabbitUrl}}/api/queues/%2F/{{colaEvidencia}}",
+        "header": [],
+        "auth": {
+          "type": "basic",
+          "basic": [
+            {
+              "key": "username",
+              "value": "{{rabbitUser}}",
+              "type": "string"
+            },
+            {
+              "key": "password",
+              "value": "{{rabbitPassword}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP esperado\",()=>pm.expect(pm.response.code).to.be.oneOf([204]));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
