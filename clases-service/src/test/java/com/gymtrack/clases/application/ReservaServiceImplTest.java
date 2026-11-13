@@ -1,6 +1,8 @@
 package com.gymtrack.clases.application;
 
 import com.gymtrack.clases.application.port.MiembrosClient;
+import com.gymtrack.clases.domain.observer.SujetoReservas;
+import com.gymtrack.common.events.ReservaCancelada;
 import com.gymtrack.clases.application.port.AccesoMembresia;
 import com.gymtrack.clases.domain.strategy.ReglasReservaResolver;
 import com.gymtrack.clases.domain.strategy.ReglaPremium;
@@ -53,13 +55,16 @@ class ReservaServiceImplTest {
     @Mock
     private MiembrosClient miembrosClient;
 
+    @Mock
+    private SujetoReservas sujetoReservas;
+
     private ReservaServiceImpl reservaService;
 
     @BeforeEach
     void prepararServicio() {
         reservaService = new ReservaServiceImpl(claseRepository, reservaRepository, miembrosClient,
                 new ReglasReservaResolver(List.of(new ReglaPremium())),
-                new ReservarClaseUseCaseFactory(claseRepository, reservaRepository));
+                new ReservarClaseUseCaseFactory(claseRepository, reservaRepository), sujetoReservas);
     }
 
     private void miembroActivo(Long miembroId) {
@@ -143,6 +148,7 @@ class ReservaServiceImplTest {
 
     private Reserva reserva(Clase clase, Long miembroId, EstadoReserva estado, Integer posicion) {
         Reserva r = new Reserva();
+        ReflectionTestUtils.setField(r, "id", miembroId);
         r.setClase(clase);
         r.setMiembroId(miembroId);
         r.setFecha(MARTES_17);
@@ -184,6 +190,7 @@ class ReservaServiceImplTest {
         assertEquals("CANCELADA", respuesta.estado());
         assertNull(respuesta.posicionEspera());
         assertEquals(EstadoReserva.CANCELADA, confirmada.getEstado());
+        verify(sujetoReservas).notificarCancelacion(new ReservaCancelada(1L, 1L, MARTES_17, true));
     }
 
     @Test
@@ -201,6 +208,7 @@ class ReservaServiceImplTest {
 
         assertEquals("CANCELADA", respuesta.estado());
         assertNull(respuesta.posicionEspera());
+        verify(sujetoReservas).notificarCancelacion(new ReservaCancelada(4L, 1L, MARTES_17, false));
         assertEquals(2, segunda.getPosicionEspera());
         assertEquals(3, tercera.getPosicionEspera());
         verify(reservaRepository, never()).findByClaseIdAndFechaAndEstadoOrderByPosicionEsperaAsc(

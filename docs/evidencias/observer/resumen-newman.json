@@ -1,0 +1,53 @@
+{
+  "broker": "RabbitMQ 4.0.5",
+  "database": "H2",
+  "runner": "Newman (colección Postman, sin interfaz gráfica)",
+  "requests": {
+    "total": 13,
+    "pending": 0,
+    "failed": 0
+  },
+  "assertions": {
+    "total": 25,
+    "pending": 0,
+    "failed": 0
+  },
+  "events": [
+    {
+      "payload_bytes": 66,
+      "redelivered": false,
+      "exchange": "gymtrack.events",
+      "routing_key": "reserva.cancelada",
+      "message_count": 0,
+      "properties": {
+        "priority": 0,
+        "delivery_mode": 2,
+        "headers": {
+          "__TypeId__": "com.gymtrack.common.events.ReservaCancelada"
+        },
+        "content_encoding": "UTF-8",
+        "content_type": "application/json"
+      },
+      "payload": "{\"reservaId\":1,\"claseId\":1,\"fecha\":\"2026-11-17\",\"liberaCupo\":true}",
+      "payload_encoding": "string"
+    },
+    {
+      "payload_bytes": 67,
+      "redelivered": false,
+      "exchange": "gymtrack.events",
+      "routing_key": "reserva.cancelada",
+      "message_count": 0,
+      "properties": {
+        "priority": 0,
+        "delivery_mode": 2,
+        "headers": {
+          "__TypeId__": "com.gymtrack.common.events.ReservaCancelada"
+        },
+        "content_encoding": "UTF-8",
+        "content_type": "application/json"
+      },
+      "payload": "{\"reservaId\":4,\"claseId\":1,\"fecha\":\"2026-11-17\",\"liberaCupo\":false}",
+      "payload_encoding": "string"
+    }
+  ]
+}

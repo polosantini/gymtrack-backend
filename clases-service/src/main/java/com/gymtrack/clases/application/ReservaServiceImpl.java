@@ -1,6 +1,8 @@
 package com.gymtrack.clases.application;
 
 import com.gymtrack.clases.application.port.MiembrosClient;
+import com.gymtrack.clases.domain.observer.SujetoReservas;
+import com.gymtrack.common.events.ReservaCancelada;
 import com.gymtrack.clases.domain.strategy.ReglasReservaResolver;
 import com.gymtrack.clases.domain.strategy.ReglasReservaStrategy;
 import com.gymtrack.clases.domain.exception.MembresiaInactivaException;
@@ -33,15 +35,17 @@ public class ReservaServiceImpl implements ReservaService {
     private final MiembrosClient miembrosClient;
     private final ReglasReservaResolver reglasResolver;
     private final ReservarClaseUseCaseFactory casosReserva;
+    private final SujetoReservas sujetoReservas;
 
     public ReservaServiceImpl(ClaseRepository claseRepository, ReservaRepository reservaRepository,
                               MiembrosClient miembrosClient, ReglasReservaResolver reglasResolver,
-                              ReservarClaseUseCaseFactory casosReserva) {
+                              ReservarClaseUseCaseFactory casosReserva, SujetoReservas sujetoReservas) {
         this.claseRepository = claseRepository;
         this.reservaRepository = reservaRepository;
         this.miembrosClient = miembrosClient;
         this.reglasResolver = reglasResolver;
         this.casosReserva = casosReserva;
+        this.sujetoReservas = sujetoReservas;
     }
 
     @Override
@@ -89,8 +93,8 @@ public class ReservaServiceImpl implements ReservaService {
         // Las posiciones de los demás son persistentes: cancelar deja un hueco, no renumera.
 
         boolean liberaCupo = estadoAnterior == EstadoReserva.CONFIRMADA;
-        // TODO Fase 3 (Observer): publicar ReservaCancelada(reserva.getId(), claseId, fecha, liberaCupo)
-        //      en el exchange gymtrack.events con la routing key EventosConfig.RK_RESERVA_CANCELADA.
+        sujetoReservas.notificarCancelacion(new ReservaCancelada(
+                reserva.getId(), claseId, reserva.getFecha(), liberaCupo));
         // La promoción y el evento de cupo asignado corresponden al consumidor de Fase 3 (#49).
 
         // No hace falta save(): la reserva está gestionada por JPA dentro de la transacción
