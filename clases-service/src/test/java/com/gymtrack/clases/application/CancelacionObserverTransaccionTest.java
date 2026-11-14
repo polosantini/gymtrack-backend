@@ -36,6 +36,7 @@ class CancelacionObserverTransaccionTest {
 
     @BeforeEach
     void preparar() {
+        clearInvocations(rabbit);
         reservas.deleteAll(); clases.deleteAll();
         clase = new Clase(); clase.setNombre("Spinning"); clase.setInstructor("Instructor");
         clase.setDias(Set.of(DiaSemana.MARTES)); clase.setHora(LocalTime.of(18,0));

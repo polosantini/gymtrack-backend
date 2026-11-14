@@ -1,0 +1,45 @@
+{
+  "rabbitmq": "4.0.5",
+  "database": "H2 persistente",
+  "runner": "Newman (colección Postman)",
+  "requests": {
+    "total": 19,
+    "pending": 0,
+    "failed": 0
+  },
+  "assertions": {
+    "total": 32,
+    "pending": 0,
+    "failed": 0
+  },
+  "events": [
+    {
+      "payload_bytes": 76,
+      "redelivered": false,
+      "exchange": "gymtrack.events",
+      "routing_key": "reserva.cupo.asignado",
+      "message_count": 0,
+      "properties": {
+        "message_id": "reserva.cupo.asignado:1",
+        "priority": 0,
+        "delivery_mode": 2,
+        "headers": {
+          "__TypeId__": "com.gymtrack.common.events.ReservaCupoAsignado"
+        },
+        "content_encoding": "UTF-8",
+        "content_type": "application/json"
+      },
+      "payload": "{\"miembroId\":4,\"claseNombre\":\"Spinning\",\"fecha\":\"2026-11-17\",\"hora\":\"18:00\"}",
+      "payload_encoding": "string"
+    }
+  ],
+  "reinicio": {
+    "repeticiones": 3,
+    "avisos_adicionales": 0,
+    "confirmadas_finales": [
+      3,
+      4
+    ]
+  },
+  "evento_invalido_dlq": 1
+}
