@@ -14,6 +14,10 @@ spring:
       simple:
         default-requeue-rejected: false
         acknowledge-mode: auto
+        task:
+          scheduling:
+            pool:
+              size: 1
   sql:
     init:
       mode: always
@@ -25,3 +29,9 @@ spring:
 
 server:
   port: 8081
+
+  gymtrack:
+    vencimientos:
+      cron: "0 0 8 * * *"
+      zone: "America/Bogota"
+      ventana-dias: 7
