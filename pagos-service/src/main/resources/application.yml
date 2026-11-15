@@ -10,6 +10,10 @@ spring:
     port: ${RABBIT_PORT:5672}
     username: ${RABBIT_USER:gymtrack}
     password: ${RABBIT_PASSWORD:gymtrack}
+    listener:
+      simple:
+        default-requeue-rejected: false
+        acknowledge-mode: auto
   sql:
     init:
       mode: always
