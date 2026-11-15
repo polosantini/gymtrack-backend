@@ -1,5 +1,6 @@
 package com.gymtrack.pagos.application;
 
+import com.gymtrack.common.events.PagoRegistrado;
 import com.gymtrack.pagos.domain.exception.PeriodoInvalidoException;
 import com.gymtrack.pagos.domain.exception.PlanInvalidoException;
 import com.gymtrack.pagos.domain.model.Pago;
@@ -8,24 +9,27 @@ import com.gymtrack.pagos.domain.model.PlanPago;
 import com.gymtrack.pagos.domain.repository.PagoRepository;
 import com.gymtrack.pagos.web.dto.PagoRequest;
 import com.gymtrack.pagos.web.dto.PagoResponse;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
 @Transactional
 public class PagoServiceImpl implements PagoService {
-    private final PagoRepository pagoRepository;
 
-    public PagoServiceImpl(PagoRepository pagoRepository) {
+    private final PagoRepository pagoRepository;
+    private final ApplicationEventPublisher eventPublisher;
+
+    public PagoServiceImpl(PagoRepository pagoRepository, ApplicationEventPublisher eventPublisher) {
         this.pagoRepository = pagoRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     @Override
     public PagoResponse crearPago(PagoRequest request) {
         PlanPago plan = parsePlan(request.plan());
-
         PeriodoPago periodo = parsePeriodo(request.periodo());
 
         Pago pago = new Pago();
@@ -37,7 +41,14 @@ public class PagoServiceImpl implements PagoService {
 
         Pago guardado = pagoRepository.save(pago);
 
-        // TODO: Para la fase 3 (#30) publicar pago.registrado en gymtrack.events después del commit
+        eventPublisher.publishEvent(new PagoRegistrado(
+                guardado.getId(),
+                guardado.getMiembroId(),
+                guardado.getPlan().name(),
+                guardado.getPeriodo().name(),
+                guardado.getMonto(),
+                guardado.getEstado().name()
+        ));
 
         return toResponse(guardado);
     }
