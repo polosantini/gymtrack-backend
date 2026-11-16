@@ -18,6 +18,7 @@ public class RabbitConfig {
 
     public static final String COLA_NOTIFICACIONES_PAGO = "notificaciones.pago.registrado.queue";
     public static final String COLA_NOTIFICACIONES_VENCIMIENTO = "notificaciones.membresia.proxima.vencer.queue";
+    public static final String COLA_NOTIFICACIONES_CUPO_ASIGNADO = "notificaciones.reserva.cupo.asignado.queue";
 
     @Bean
     public TopicExchange gymtrackEventsExchange() {
@@ -55,6 +56,20 @@ public class RabbitConfig {
                 .bind(notificacionesVencimientoQueue)
                 .to(gymtrackEventsExchange)
                 .with(EventosConfig.RK_MEMBRESIA_PROXIMA_VENCER);
+    }
+
+    @Bean
+    public Queue notificacionesCupoAsignadoQueue() {
+        return QueueBuilder.durable(COLA_NOTIFICACIONES_CUPO_ASIGNADO).build();
+    }
+
+    @Bean
+    public Binding notificacionesCupoAsignadoBinding(Queue notificacionesCupoAsignadoQueue,
+                                                     TopicExchange gymtrackEventsExchange) {
+        return BindingBuilder
+                .bind(notificacionesCupoAsignadoQueue)
+                .to(gymtrackEventsExchange)
+                .with(EventosConfig.RK_RESERVA_CUPO_ASIGNADO);
     }
 
     @Bean
