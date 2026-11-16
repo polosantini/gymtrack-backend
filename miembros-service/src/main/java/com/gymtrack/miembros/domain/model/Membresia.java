@@ -25,6 +25,9 @@ public class Membresia {
     @Column(nullable = false)
     private LocalDate fechaVencimiento;
 
+    @Column
+    private Long ultimoPagoId;
+
     // Constructor
     public Membresia() {
 
@@ -60,6 +63,9 @@ public class Membresia {
         return fechaVencimiento;
     }
 
+    public Long getUltimoPagoId() { return ultimoPagoId; }
+
+
     // Setters
     public void setPlan(TipoPlanMembresia plan) {
         this.plan = plan;
@@ -76,4 +82,6 @@ public class Membresia {
     public void setFechaVencimiento(LocalDate fechaVencimiento) {
         this.fechaVencimiento = fechaVencimiento;
     }
+
+    public void setUltimoPagoId(Long ultimoPagoId) { this.ultimoPagoId = ultimoPagoId; }
 }

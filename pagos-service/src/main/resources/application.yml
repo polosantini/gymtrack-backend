@@ -5,6 +5,11 @@ spring:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/gymtrack_pagos}
     username: ${DB_USER:gymtrack}
     password: ${DB_PASSWORD:gymtrack}
+  rabbitmq:
+    host: ${RABBIT_HOST:localhost}
+    port: ${RABBIT_PORT:5672}
+    username: ${RABBIT_USER:gymtrack}
+    password: ${RABBIT_PASSWORD:gymtrack}
   sql:
     init:
       mode: always

@@ -124,10 +124,12 @@ public class MiembroServiceImpl implements MiembroService {
         if (membresia == null) {
             return new AccesoResponse(false, null);
         }
-        boolean activa = membresia.getEstado() == EstadoMembresia.ACTIVA;
-        String plan = membresia.getPlan().name();
 
-        return new AccesoResponse(activa, plan);
+        boolean vigente = membresia.getFechaVencimiento() != null
+                && !membresia.getFechaVencimiento().isBefore(LocalDate.now());
+        boolean activa = membresia.getEstado() == EstadoMembresia.ACTIVA && vigente;
+
+        return new AccesoResponse(activa, membresia.getPlan().name());
     }
 
     private MembresiaResponse toResponse(Membresia m) {
