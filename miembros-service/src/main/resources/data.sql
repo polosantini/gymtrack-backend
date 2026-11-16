@@ -11,7 +11,7 @@
 --   1 = Ana    BASICO  SUSPENDIDA  → demo: rechazo de Strategy (Básico sin activar)
 --   2 = Luis   FULL    ACTIVA      → demo: happy path de reservas
 --   3 = Sara   PREMIUM SUSPENDIDA  → demo: plan ilimitado pero sin activar
---   4 = Diego  BASICO  ACTIVA      → demo: primero en lista de espera (paso 4)
+--   4 = Diego  BASICO  ACTIVA      → demo: primero en lista de espera (paso 4) y vence en 3 días (paso 5, membresia.proxima.vencer)
 --   5 = Carlos FULL    VENCIDA     → demo: /acceso activa=false por VENCIDA
 --   6 = María  PREMIUM ACTIVA      → demo: miembro premium activo (reserva ilimitada)
 --   7 = Pedro  (sin membresía)     → demo: /acceso activa=false, plan=null
@@ -22,7 +22,7 @@ INSERT INTO membresia (id, plan, estado, fecha_inicio, fecha_vencimiento) VALUES
                                                                               (1, 'BASICO',  'SUSPENDIDA', CURRENT_DATE, CURRENT_DATE + 30),
                                                                               (2, 'FULL',    'ACTIVA',     CURRENT_DATE, CURRENT_DATE + 90),
                                                                               (3, 'PREMIUM', 'SUSPENDIDA', CURRENT_DATE, CURRENT_DATE + 365),
-                                                                              (4, 'BASICO',  'ACTIVA',     CURRENT_DATE, CURRENT_DATE + 30),
+                                                                              (4, 'BASICO',  'ACTIVA',     CURRENT_DATE, CURRENT_DATE + 3),
                                                                               (5, 'FULL',    'VENCIDA',    CURRENT_DATE - 120, CURRENT_DATE - 30),
                                                                               (6, 'PREMIUM', 'ACTIVA',     CURRENT_DATE, CURRENT_DATE + 365)
     ON CONFLICT (id) DO NOTHING;

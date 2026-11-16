@@ -28,6 +28,9 @@ public class Membresia {
     @Column
     private Long ultimoPagoId;
 
+    @Column
+    private LocalDate notificadoVencimientoEl;
+
     // Constructor
     public Membresia() {
 
@@ -84,4 +87,9 @@ public class Membresia {
     }
 
     public void setUltimoPagoId(Long ultimoPagoId) { this.ultimoPagoId = ultimoPagoId; }
+
+    public LocalDate getNotificadoVencimientoEl() { return notificadoVencimientoEl; }
+    public void setNotificadoVencimientoEl(LocalDate notificadoVencimientoEl) {
+        this.notificadoVencimientoEl = notificadoVencimientoEl;
+    }
 }

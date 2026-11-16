@@ -18,6 +18,7 @@ import org.springframework.context.annotation.Configuration;
 public class RabbitConfig {
 
     public static final String COLA_PAGO_REGISTRADO = "miembros.pago.registrado.queue";
+    public static final String COLA_MEMBRESIA_PROXIMA_VENCER = "notificaciones.membresia.proxima.vencer.queue";
 
     @Bean
     public TopicExchange gymtrackEventsExchange() {
@@ -35,6 +36,20 @@ public class RabbitConfig {
                 .bind(pagoRegistradoQueue)
                 .to(gymtrackEventsExchange)
                 .with(EventosConfig.RK_PAGO_REGISTRADO);
+    }
+
+    @Bean
+    public Queue membresiaProximaVencerQueue() {
+        return QueueBuilder.durable(COLA_MEMBRESIA_PROXIMA_VENCER).build();
+    }
+
+    @Bean
+    public Binding membresiaProximaVencerBinding(Queue membresiaProximaVencerQueue,
+                                                 TopicExchange gymtrackEventsExchange) {
+        return BindingBuilder
+                .bind(membresiaProximaVencerQueue)
+                .to(gymtrackEventsExchange)
+                .with(EventosConfig.RK_MEMBRESIA_PROXIMA_VENCER);
     }
 
     @Bean
