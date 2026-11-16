@@ -28,6 +28,9 @@ public class Notificacion {
     @Column(nullable = false)
     private boolean leida;
 
+    @Column
+    private Long referenciaExterna;
+
     @PrePersist
     public void defaultCampos() {
         if (this.fecha == null) {
@@ -81,4 +84,7 @@ public class Notificacion {
     public void setLeida(boolean leida) {
         this.leida = leida;
     }
+
+    public Long getReferenciaExterna() { return referenciaExterna; }
+    public void setReferenciaExterna(Long referenciaExterna) { this.referenciaExterna = referenciaExterna; }
 }
