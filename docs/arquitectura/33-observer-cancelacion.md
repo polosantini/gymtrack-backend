@@ -29,10 +29,10 @@ El application.yml añade valores por defecto compatibles con docker-compose.yml
 
 | Variable | Valor por defecto |
 |---|---|
-| RABBITMQ_HOST | localhost |
-| RABBITMQ_PORT | 5672 |
-| RABBITMQ_USERNAME | gymtrack |
-| RABBITMQ_PASSWORD | gymtrack |
+| RABBIT_HOST | localhost |
+| RABBIT_PORT | 5672 |
+| RABBIT_USER | gymtrack |
+| RABBIT_PASSWORD | gymtrack |
 
 Se usan las credenciales de desarrollo del compose existente. Para otro entorno se configuran las variables correspondientes. El convertidor JSON se conecta automáticamente a RabbitTemplate por Spring Boot. No se crea todavía la cola del consumidor de negocio de #49; la colección declara una cola temporal de evidencia y la elimina al terminar.
 
