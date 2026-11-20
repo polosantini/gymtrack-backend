@@ -6,10 +6,10 @@ spring:
     username: ${DB_USER:gymtrack}
     password: ${DB_PASSWORD:gymtrack}
   rabbitmq:
-    host: ${RABBITMQ_HOST:localhost}
-    port: ${RABBITMQ_PORT:5672}
-    username: ${RABBITMQ_USERNAME:gymtrack}
-    password: ${RABBITMQ_PASSWORD:gymtrack}
+    host: ${RABBIT_HOST:localhost}
+    port: ${RABBIT_PORT:5672}
+    username: ${RABBIT_USER:gymtrack}
+    password: ${RABBIT_PASSWORD:gymtrack}
   sql:
     init:
       mode: always
