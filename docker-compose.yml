@@ -13,9 +13,7 @@ services:
     - postgres-data:/var/lib/postgresql/data
     - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
-      test:
-      - CMD-SHELL
-      - pg_isready -U "$${POSTGRES_USER}" -d postgres
+      test: 'pg_isready -U "$${POSTGRES_USER}" -d postgres'
       interval: 5s
       timeout: 5s
       retries: 10
@@ -29,10 +27,7 @@ services:
     - ${RABBITMQ_AMQP_PORT:-5672}:5672
     - ${RABBITMQ_MANAGEMENT_PORT:-15672}:15672
     healthcheck:
-      test:
-      - CMD
-      - rabbitmq-diagnostics
-      - ping
+      test: "rabbitmq-diagnostics ping"
       interval: 10s
       timeout: 5s
       retries: 10
@@ -99,5 +94,20 @@ services:
       rabbitmq:
         condition: service_healthy
     restart: unless-stopped
+
+  frontend:
+    image: ghcr.io/polosantini/gymtrack-frontend:${FRONTEND_TAG:-latest}
+    ports:
+      - "3000:80"
+    environment:
+      MIEMBROS_URL: http://miembros:8081
+      CLASES_URL: http://clases:8082
+      PAGOS_URL: http://pagos:8083
+    depends_on:
+      - miembros
+      - clases
+      - pagos
+    restart: unless-stopped
+
 volumes:
   postgres-data: null

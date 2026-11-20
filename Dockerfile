@@ -10,7 +10,12 @@ COPY clases-service/pom.xml clases-service/pom.xml
 COPY clases-service/src clases-service/src
 COPY pagos-service/pom.xml pagos-service/pom.xml
 COPY pagos-service/src pagos-service/src
-RUN test -n "${SERVICIO}" && mvn -B -U -pl "${SERVICIO}" -am package -DskipTests
+RUN --mount=type=cache,target=/root/.m2/repository \
+    test -n "${SERVICIO}" && \
+    mvn -B -ntp -pl "${SERVICIO}" -am package -DskipTests \
+      -Dmaven.wagon.http.retryHandler.count=5 \
+      -Dmaven.wagon.http.retryHandler.requestSentEnabled=true \
+      -Dmaven.wagon.rto=120000
 
 FROM eclipse-temurin:21-jre
 WORKDIR /app
