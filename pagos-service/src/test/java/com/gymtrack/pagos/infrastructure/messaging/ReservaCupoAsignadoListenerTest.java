@@ -28,6 +28,8 @@ class ReservaCupoAsignadoListenerTest {
     @Mock
     private NotificacionRepository notificacionRepository;
 
+    @Mock private com.gymtrack.pagos.domain.repository.EventoNotificacionProcesadoRepository procesados;
+
     @InjectMocks
     private ReservaCupoAsignadoListener listener;
 
@@ -85,18 +87,9 @@ class ReservaCupoAsignadoListenerTest {
     }
 
     @Test
-    @DisplayName("messageId con formato inesperado: crea notificación sin deduplicar")
-    void messageIdInvalidoCreaSinDeduplicar() {
-        when(notificacionRepository.save(any(Notificacion.class)))
-                .thenAnswer(inv -> inv.getArgument(0));
-
-        listener.consumir(evento(), mensajeConMessageId("formato-raro:123"));
-
-        ArgumentCaptor<Notificacion> captor = ArgumentCaptor.forClass(Notificacion.class);
-        verify(notificacionRepository).save(captor.capture());
-
-        Notificacion n = captor.getValue();
-        assertThat(n.getReferenciaExterna()).isNull();
-        verify(notificacionRepository, never()).existsByTipoAndReferenciaExterna(any(), any());
+    void messageIdInvalidoSeRechazaSinCrearDuplicados() {
+        org.junit.jupiter.api.Assertions.assertThrows(org.springframework.amqp.AmqpRejectAndDontRequeueException.class,
+            ()->listener.consumir(evento(),mensajeConMessageId("formato-raro:123")));
+        verify(notificacionRepository,never()).save(any());
     }
 }

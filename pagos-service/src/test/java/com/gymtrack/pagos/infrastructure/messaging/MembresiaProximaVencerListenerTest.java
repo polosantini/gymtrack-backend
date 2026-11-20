@@ -25,6 +25,8 @@ class MembresiaProximaVencerListenerTest {
     @Mock
     private NotificacionRepository notificacionRepository;
 
+    @Mock private com.gymtrack.pagos.domain.repository.EventoNotificacionProcesadoRepository procesados;
+
     @InjectMocks
     private MembresiaProximaVencerListener listener;
 

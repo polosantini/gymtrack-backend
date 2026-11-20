@@ -27,6 +27,8 @@ class PagoRegistradoListenerTest {
     @Mock
     private MiembroRepository miembroRepository;
 
+    @Mock private com.gymtrack.miembros.domain.repository.PagoAplicadoRepository pagosAplicados;
+
     @InjectMocks
     private PagoRegistradoListener listener;
 
@@ -72,7 +74,7 @@ class PagoRegistradoListenerTest {
         Miembro m = miembroConMembresia(
                 EstadoMembresia.SUSPENDIDA, TipoPlanMembresia.BASICO,
                 hoy.minusDays(5), hoy.plusDays(25), null);
-        when(miembroRepository.findById(MIEMBRO_ID)).thenReturn(Optional.of(m));
+        when(miembroRepository.findByIdForUpdate(MIEMBRO_ID)).thenReturn(Optional.of(m));
 
         listener.consumir(evento("FULL", "MENSUAL"));
 
@@ -94,7 +96,7 @@ class PagoRegistradoListenerTest {
         Miembro m = miembroConMembresia(
                 EstadoMembresia.ACTIVA, TipoPlanMembresia.FULL,
                 inicioOriginal, vencimientoOriginal, 99L);
-        when(miembroRepository.findById(MIEMBRO_ID)).thenReturn(Optional.of(m));
+        when(miembroRepository.findByIdForUpdate(MIEMBRO_ID)).thenReturn(Optional.of(m));
 
         listener.consumir(evento("FULL", "TRIMESTRAL"));
 
@@ -114,7 +116,7 @@ class PagoRegistradoListenerTest {
         Miembro m = miembroConMembresia(
                 EstadoMembresia.ACTIVA, TipoPlanMembresia.FULL,
                 hoy.minusDays(120), hoy.minusDays(30), 99L);
-        when(miembroRepository.findById(MIEMBRO_ID)).thenReturn(Optional.of(m));
+        when(miembroRepository.findByIdForUpdate(MIEMBRO_ID)).thenReturn(Optional.of(m));
 
         listener.consumir(evento("FULL", "MENSUAL"));
 
@@ -132,7 +134,7 @@ class PagoRegistradoListenerTest {
         Miembro m = miembroConMembresia(
                 EstadoMembresia.VENCIDA, TipoPlanMembresia.BASICO,
                 hoy.minusDays(120), hoy.minusDays(90), 50L);
-        when(miembroRepository.findById(MIEMBRO_ID)).thenReturn(Optional.of(m));
+        when(miembroRepository.findByIdForUpdate(MIEMBRO_ID)).thenReturn(Optional.of(m));
 
         listener.consumir(evento("PREMIUM", "ANUAL"));
 
@@ -151,7 +153,7 @@ class PagoRegistradoListenerTest {
         Miembro m = miembroConMembresia(
                 EstadoMembresia.ACTIVA, TipoPlanMembresia.FULL,
                 hoy.minusDays(10), hoy.plusDays(20), PAGO_ID); // mismo pagoId
-        when(miembroRepository.findById(MIEMBRO_ID)).thenReturn(Optional.of(m));
+        when(miembroRepository.findByIdForUpdate(MIEMBRO_ID)).thenReturn(Optional.of(m));
 
         listener.consumir(evento("FULL", "MENSUAL"));
 
@@ -168,9 +170,9 @@ class PagoRegistradoListenerTest {
         m.setNombre("Sin membresía");
         m.setEmail("sin@example.com");
         // membresia == null
-        when(miembroRepository.findById(MIEMBRO_ID)).thenReturn(Optional.of(m));
+        when(miembroRepository.findByIdForUpdate(MIEMBRO_ID)).thenReturn(Optional.of(m));
 
-        listener.consumir(evento("BASICO", "MENSUAL"));
+        org.junit.jupiter.api.Assertions.assertThrows(org.springframework.amqp.AmqpRejectAndDontRequeueException.class, ()->listener.consumir(evento("BASICO", "MENSUAL")));
 
         verify(miembroRepository, never()).save(any());
     }
@@ -182,7 +184,7 @@ class PagoRegistradoListenerTest {
         Miembro m = miembroConMembresia(
                 EstadoMembresia.SUSPENDIDA, TipoPlanMembresia.BASICO,
                 hoy, hoy.plusDays(30), null);
-        when(miembroRepository.findById(MIEMBRO_ID)).thenReturn(Optional.of(m));
+        when(miembroRepository.findByIdForUpdate(MIEMBRO_ID)).thenReturn(Optional.of(m));
 
         listener.consumir(evento("PLANINEXISTENTE", "MENSUAL"));
 

@@ -39,4 +39,8 @@ public class PagoController {
     public ResponseEntity<List<NotificacionResponse>> listarNotificaciones(@RequestParam Long miembroId) {
         return ResponseEntity.ok(notificacionService.listarPorMiembro(miembroId));
     }
+    @PatchMapping("/notificaciones/{id}/leer")
+    public ResponseEntity<NotificacionResponse> marcarLeida(@PathVariable Long id) {
+        return ResponseEntity.ok(notificacionService.marcarLeida(id));
+    }
 }

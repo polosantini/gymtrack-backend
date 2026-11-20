@@ -42,3 +42,6 @@ Thumbs.db
 
 # Evidencia generada al ejecutar la demo (se conserva como artefacto en Actions)
 docs/evidencias/40-pagos-apagado/
+
+# Evidencia de regresiones HTTP/AMQP
+docs/evidencias/integridad-backend/

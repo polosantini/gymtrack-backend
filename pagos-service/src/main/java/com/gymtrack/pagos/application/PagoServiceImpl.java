@@ -1,6 +1,7 @@
 package com.gymtrack.pagos.application;
 
 import com.gymtrack.common.events.PagoRegistrado;
+import com.gymtrack.pagos.application.port.ValidadorMembresiaPago;
 import com.gymtrack.pagos.domain.exception.PeriodoInvalidoException;
 import com.gymtrack.pagos.domain.exception.PlanInvalidoException;
 import com.gymtrack.pagos.domain.model.Pago;
@@ -21,8 +22,10 @@ public class PagoServiceImpl implements PagoService {
 
     private final PagoRepository pagoRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final ValidadorMembresiaPago validadorMembresia;
 
-    public PagoServiceImpl(PagoRepository pagoRepository, ApplicationEventPublisher eventPublisher) {
+    public PagoServiceImpl(PagoRepository pagoRepository, ApplicationEventPublisher eventPublisher, ValidadorMembresiaPago validadorMembresia) {
+        this.validadorMembresia=validadorMembresia;
         this.pagoRepository = pagoRepository;
         this.eventPublisher = eventPublisher;
     }
@@ -31,6 +34,8 @@ public class PagoServiceImpl implements PagoService {
     public PagoResponse crearPago(PagoRequest request) {
         PlanPago plan = parsePlan(request.plan());
         PeriodoPago periodo = parsePeriodo(request.periodo());
+
+        validadorMembresia.validar(request.miembroId());
 
         Pago pago = new Pago();
         pago.setMiembroId(request.miembroId());

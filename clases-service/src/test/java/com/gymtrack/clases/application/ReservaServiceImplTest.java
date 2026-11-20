@@ -64,7 +64,8 @@ class ReservaServiceImplTest {
     void prepararServicio() {
         reservaService = new ReservaServiceImpl(claseRepository, reservaRepository, miembrosClient,
                 new ReglasReservaResolver(List.of(new ReglaPremium())),
-                new ReservarClaseUseCaseFactory(claseRepository, reservaRepository), sujetoReservas);
+                new ReservaConTransaccion(new ReservarClaseUseCaseFactory(claseRepository, reservaRepository), org.mockito.Mockito.mock(com.gymtrack.clases.application.port.BloqueoReservasPorMiembro.class)), sujetoReservas,
+                org.mockito.Mockito.mock(com.gymtrack.clases.application.port.BloqueoReservasPorMiembro.class), org.mockito.Mockito.mock(com.gymtrack.clases.application.port.RegistroCancelaciones.class));
     }
 
     private void miembroActivo(Long miembroId) {

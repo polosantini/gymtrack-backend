@@ -24,6 +24,12 @@ public class NotificacionServiceImpl implements NotificacionService {
                 .toList();
     }
 
+    @Override
+    public NotificacionResponse marcarLeida(Long id) {
+        var n=notificacionRepository.findById(id).orElseThrow(()->new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND,"Notificacion inexistente"));
+        n.setLeida(true);return toResponse(n);
+    }
+
     private NotificacionResponse toResponse(Notificacion n) {
         return new NotificacionResponse(
                 n.getId(),

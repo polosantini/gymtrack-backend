@@ -68,6 +68,16 @@ jobs:
       - name: Probar catalogo y reservas con Pagos apagado (#40)
         shell: pwsh
         run: ./scripts/demo/probar-pagos-apagado.ps1
+      - name: Probar integridad de cuotas y pagos con servicios reales
+        run: python3 scripts/demo/probar-integridad-backend.py
+      - name: Conservar evidencia de integridad
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: evidencia-integridad-backend-${{ github.run_id }}-${{ github.run_attempt }}
+          path: docs/evidencias/integridad-backend/ejecucion.json
+          if-no-files-found: warn
+          retention-days: 30
       - name: Conservar evidencia de disponibilidad
         if: always()
         uses: actions/upload-artifact@v4

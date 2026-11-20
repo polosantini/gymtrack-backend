@@ -28,6 +28,8 @@ import static org.mockito.Mockito.*;
 class AsignarCupoServiceTest {
     @Autowired private AsignarCupoService servicio;
     @Autowired private ReservaService reservador;
+    @Autowired private com.gymtrack.clases.infrastructure.messaging.BandejaEventos bandeja;
+    @Autowired private EventoPendienteRepository pendientes;
     @MockBean private MiembrosClient miembros;
     @Autowired private ClaseRepository clases;
     @Autowired private ReservaRepository reservas;
@@ -112,9 +114,13 @@ class AsignarCupoServiceTest {
         var primera=reserva(clase,4L,fecha,EstadoReserva.EN_ESPERA,1);var segunda=reserva(clase,6L,fecha,EstadoReserva.EN_ESPERA,2);
         doThrow(new AmqpException("Fallo temporal")).doNothing().when(rabbit)
                 .convertAndSend(eq("gymtrack.events"),eq("reserva.cupo.asignado"),any(ReservaCupoAsignado.class),any(MessagePostProcessor.class));
-        assertThrows(AmqpException.class,()->servicio.procesar(evento()));
-        assertEquals(EstadoReserva.CONFIRMADA,recargar(primera).getEstado());assertFalse(recibos.findById(cancelada.getId()).orElseThrow().isEnviado());
-        servicio.procesar(evento());assertTrue(recibos.findById(cancelada.getId()).orElseThrow().isEnviado());
+        assertDoesNotThrow(()->servicio.procesar(evento()));
+        String clave="reserva.cupo.asignado:"+cancelada.getId();
+        assertEquals(EstadoReserva.CONFIRMADA,recargar(primera).getEstado());
+        assertFalse(pendientes.findById(clave).orElseThrow().isEnviado());
+        servicio.procesar(evento()); // El duplicado no promociona a otra persona.
+        assertTrue(bandeja.intentarPublicar(clave));
+        assertTrue(pendientes.findById(clave).orElseThrow().isEnviado());
         assertEquals(EstadoReserva.EN_ESPERA,recargar(segunda).getEstado());assertEquals(3,confirmadas());
         verify(rabbit,times(2)).convertAndSend(eq("gymtrack.events"),eq("reserva.cupo.asignado"),any(ReservaCupoAsignado.class),any(MessagePostProcessor.class));
     }

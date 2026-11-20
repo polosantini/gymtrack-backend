@@ -87,7 +87,7 @@ public class MiembroServiceImpl implements MiembroService {
 
     @Override
     public MembresiaResponse crearMembresia(Long miembroId, MembresiaRequest request) {
-        Miembro miembro = miembroRepository.findById(miembroId)
+        Miembro miembro = miembroRepository.findByIdForUpdate(miembroId)
                 .orElseThrow(() -> new MiembroNotFoundException(miembroId));
 
 
@@ -140,7 +140,8 @@ public class MiembroServiceImpl implements MiembroService {
         return new MembresiaResponse(
                 m.getId(),
                 m.getPlan().name(),
-                m.getEstado().name(),
+                (m.getEstado()==EstadoMembresia.ACTIVA && m.getFechaVencimiento()!=null
+                        && m.getFechaVencimiento().isBefore(LocalDate.now()) ? EstadoMembresia.VENCIDA : m.getEstado()).name(),
                 m.getFechaInicio(),
                 m.getFechaVencimiento()
         );

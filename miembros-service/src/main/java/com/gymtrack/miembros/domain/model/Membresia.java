@@ -29,6 +29,9 @@ public class Membresia {
     private Long ultimoPagoId;
 
     @Column
+    private Long pagosPreviosHasta;
+
+    @Column
     private LocalDate notificadoVencimientoEl;
 
     // Constructor
@@ -65,6 +68,9 @@ public class Membresia {
     public LocalDate getFechaVencimiento() {
         return fechaVencimiento;
     }
+
+    public Long getPagosPreviosHasta() { return pagosPreviosHasta; }
+    public void setPagosPreviosHasta(Long id) { pagosPreviosHasta=id; }
 
     public Long getUltimoPagoId() { return ultimoPagoId; }
 

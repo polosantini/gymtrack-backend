@@ -1,0 +1,30 @@
+Version 2 - solo backend
+Cambios respecto al ZIP Backend-Corregido V1.
+Conservar .env y personalizaciones de Compose/frontend.
+
+MODIFICADO LEEME_CORRECCIONES.md
+MODIFICADO README.md
+NUEVO common/src/main/java/com/gymtrack/common/rpc/ConsultarMembresiaPago.java
+NUEVO common/src/main/java/com/gymtrack/common/rpc/MembresiaPagoRpc.java
+NUEVO common/src/main/java/com/gymtrack/common/rpc/RespuestaMembresiaPago.java
+NUEVO common/src/test/java/com/gymtrack/common/rpc/MembresiaPagoRpcJsonTest.java
+NUEVO docs/correcciones/COMPATIBILIDAD_FRONTEND.md
+MODIFICADO docs/correcciones/LEEME_BACKEND_CORREGIDO.md
+NUEVO docs/correcciones/VALIDACION_PREVIA_PAGOS.md
+MODIFICADO docs/evidencias/correcciones-backend/validacion.json
+NUEVO miembros-service/src/main/java/com/gymtrack/miembros/infrastructure/messaging/ConsultaMembresiaPagoConfig.java
+NUEVO miembros-service/src/main/java/com/gymtrack/miembros/infrastructure/messaging/ConsultaMembresiaPagoListener.java
+NUEVO miembros-service/src/test/java/com/gymtrack/miembros/infrastructure/messaging/ConsultaMembresiaPagoListenerTest.java
+MODIFICADO pagos-service/src/main/java/com/gymtrack/pagos/application/PagoServiceImpl.java
+NUEVO pagos-service/src/main/java/com/gymtrack/pagos/application/port/ValidadorMembresiaPago.java
+NUEVO pagos-service/src/main/java/com/gymtrack/pagos/domain/exception/MiembroPagoNoEncontradoException.java
+NUEVO pagos-service/src/main/java/com/gymtrack/pagos/domain/exception/MiembroSinMembresiaException.java
+NUEVO pagos-service/src/main/java/com/gymtrack/pagos/domain/exception/ValidacionPagoNoDisponibleException.java
+NUEVO pagos-service/src/main/java/com/gymtrack/pagos/infrastructure/messaging/ConsultaMembresiaPagoConfig.java
+NUEVO pagos-service/src/main/java/com/gymtrack/pagos/infrastructure/messaging/ValidadorMembresiaAmqp.java
+MODIFICADO pagos-service/src/main/java/com/gymtrack/pagos/web/GlobalExceptionHandler.java
+MODIFICADO pagos-service/src/main/resources/application.yml
+MODIFICADO pagos-service/src/test/java/com/gymtrack/pagos/application/PagoServiceImplTest.java
+MODIFICADO pagos-service/src/test/java/com/gymtrack/pagos/application/PagosOutboxYEntradasTest.java
+NUEVO pagos-service/src/test/java/com/gymtrack/pagos/infrastructure/messaging/ValidadorMembresiaAmqpTest.java
+MODIFICADO scripts/demo/probar-integridad-backend.py

@@ -2,6 +2,8 @@ package com.gymtrack.pagos.infrastructure.messaging;
 
 import com.gymtrack.common.events.PagoRegistrado;
 import com.gymtrack.pagos.domain.model.Notificacion;
+import com.gymtrack.pagos.domain.model.EventoNotificacionProcesado;
+import com.gymtrack.pagos.domain.repository.EventoNotificacionProcesadoRepository;
 import com.gymtrack.pagos.domain.model.TipoNotificacion;
 import com.gymtrack.pagos.domain.repository.NotificacionRepository;
 import org.slf4j.Logger;
@@ -16,8 +18,10 @@ public class PagoRegistradoNotificacionListener {
     private static final Logger log = LoggerFactory.getLogger(PagoRegistradoNotificacionListener.class);
 
     private final NotificacionRepository notificacionRepository;
+    private final EventoNotificacionProcesadoRepository procesados;
 
-    public PagoRegistradoNotificacionListener(NotificacionRepository notificacionRepository) {
+    public PagoRegistradoNotificacionListener(NotificacionRepository notificacionRepository, EventoNotificacionProcesadoRepository procesados) {
+        this.procesados=procesados;
         this.notificacionRepository = notificacionRepository;
     }
 
@@ -34,6 +38,10 @@ public class PagoRegistradoNotificacionListener {
             return;
         }
 
+        if(!"REGISTRADO".equals(evento.estado()))return;
+        if(evento.monto()==null)throw new org.springframework.amqp.AmqpRejectAndDontRequeueException("Pago sin monto");
+        String clave="pago:"+evento.pagoId();
+        if(procesados.existsById(clave))return;
         // Idempotencia
         if (notificacionRepository.existsByTipoAndReferenciaExterna(
                 TipoNotificacion.CONFIRMACION_PAGO, evento.pagoId())) {
@@ -51,6 +59,7 @@ public class PagoRegistradoNotificacionListener {
         notificacion.setReferenciaExterna(evento.pagoId());
         notificacion.setLeida(false);
 
+        procesados.saveAndFlush(new EventoNotificacionProcesado(clave));
         Notificacion guardada = notificacionRepository.save(notificacion);
 
         log.info("Notificación creada id={} miembroId={} pagoId={} tipo={}",

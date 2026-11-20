@@ -111,3 +111,13 @@ En Windows también se puede utilizar `powershell -NoProfile -File .\scripts\dem
 El job `Validar Docker y arranque` ejecuta esta prueba después del arranque HTTP y conserva un artefacto JSON. Una ejecución con `resultado=OK` es la evidencia de Docker; agregar el procedimiento no equivale a haberlo ejecutado correctamente.
 
 Referencia: [publicación y visibilidad de paquetes GHCR](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry).
+
+
+## Correcciones de integridad del backend
+
+Ver [guía de cambios, pruebas y actualización](docs/correcciones/LEEME_BACKEND_CORREGIDO.md). Incluye coordinación por miembro, eventos pendientes durables, deduplicación, recuperación de consumidores y regresiones HTTP/AMQP.
+
+
+## Validacion de pagos antes del registro (V2)
+
+POST /api/pagos comprueba por RabbitMQ que el miembro exista y tenga membresia: 409 si no la tiene, 404 si no existe y 503 si no puede validar; en esos casos no guarda pago ni evento. Ver [canal interno y actualizacion](docs/correcciones/VALIDACION_PREVIA_PAGOS.md) y [compatibilidad con frontend](docs/correcciones/COMPATIBILIDAD_FRONTEND.md).

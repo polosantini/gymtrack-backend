@@ -14,6 +14,17 @@ spring:
       simple:
         default-requeue-rejected: false
         acknowledge-mode: auto
+        retry:
+          enabled: true
+          max-attempts: 3
+          initial-interval: 500ms
+          multiplier: 2
+          max-interval: 2s
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    template:
+      mandatory: true
+    connection-timeout: 2s
   sql:
     init:
       mode: always
@@ -22,6 +33,12 @@ spring:
       ddl-auto: update
     defer-datasource-initialization: true
     show-sql: true
-
 server:
   port: 8083
+gymtrack:
+  eventos:
+    confirmar: true
+    reintentos-auto: true
+    reintento-ms: 5000
+  pagos:
+    validacion-timeout-ms: 2500

@@ -1,6 +1,8 @@
 package com.gymtrack.clases.application;
 
 import com.gymtrack.clases.application.port.MiembrosClient;
+import com.gymtrack.clases.application.port.BloqueoReservasPorMiembro;
+import com.gymtrack.clases.application.port.RegistroCancelaciones;
 import com.gymtrack.clases.domain.observer.SujetoReservas;
 import com.gymtrack.common.events.ReservaCancelada;
 import com.gymtrack.clases.domain.strategy.ReglasReservaResolver;
@@ -34,21 +36,26 @@ public class ReservaServiceImpl implements ReservaService {
 
     private final MiembrosClient miembrosClient;
     private final ReglasReservaResolver reglasResolver;
-    private final ReservarClaseUseCaseFactory casosReserva;
+    private final ReservaConTransaccion reservasTransaccionales;
     private final SujetoReservas sujetoReservas;
+    private final BloqueoReservasPorMiembro bloqueoMiembro;
+    private final RegistroCancelaciones registroCancelaciones;
 
     public ReservaServiceImpl(ClaseRepository claseRepository, ReservaRepository reservaRepository,
                               MiembrosClient miembrosClient, ReglasReservaResolver reglasResolver,
-                              ReservarClaseUseCaseFactory casosReserva, SujetoReservas sujetoReservas) {
+                              ReservaConTransaccion reservasTransaccionales, SujetoReservas sujetoReservas,
+                              BloqueoReservasPorMiembro bloqueoMiembro, RegistroCancelaciones registroCancelaciones) {
         this.claseRepository = claseRepository;
         this.reservaRepository = reservaRepository;
         this.miembrosClient = miembrosClient;
         this.reglasResolver = reglasResolver;
-        this.casosReserva = casosReserva;
+        this.reservasTransaccionales = reservasTransaccionales;
         this.sujetoReservas = sujetoReservas;
+        this.bloqueoMiembro=bloqueoMiembro; this.registroCancelaciones=registroCancelaciones;
     }
 
     @Override
+    @Transactional(propagation=org.springframework.transaction.annotation.Propagation.NOT_SUPPORTED)
     public ReservaResponse reservar(ReservaRequest request) {
         var acceso = miembrosClient.consultarAcceso(request.miembroId());
         if (!Boolean.TRUE.equals(acceso.activa())) {
@@ -61,7 +68,8 @@ public class ReservaServiceImpl implements ReservaService {
             // Una respuesta incompleta de Miembros no debe conceder reservas sin regla.
             throw new MiembrosNoDisponibleException();
         }
-        return toResponse(casosReserva.crear(regla).ejecutar(request));
+        bloqueoMiembro.preparar(request.miembroId());
+        return toResponse(reservasTransaccionales.ejecutar(regla,request));
     }
 
     @Override
@@ -93,8 +101,9 @@ public class ReservaServiceImpl implements ReservaService {
         // Las posiciones de los demás son persistentes: cancelar deja un hueco, no renumera.
 
         boolean liberaCupo = estadoAnterior == EstadoReserva.CONFIRMADA;
-        sujetoReservas.notificarCancelacion(new ReservaCancelada(
-                reserva.getId(), claseId, reserva.getFecha(), liberaCupo));
+        var evento = new ReservaCancelada(reserva.getId(), claseId, reserva.getFecha(), liberaCupo);
+        registroCancelaciones.registrar(evento);
+        sujetoReservas.notificarCancelacion(evento);
         // La promoción y el evento de cupo asignado corresponden al consumidor de Fase 3 (#49).
 
         // No hace falta save(): la reserva está gestionada por JPA dentro de la transacción

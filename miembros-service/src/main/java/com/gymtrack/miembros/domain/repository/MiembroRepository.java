@@ -11,6 +11,9 @@ import java.util.List;
 import java.util.Optional;
 
 public interface MiembroRepository extends JpaRepository<Miembro, Long> {
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("select m from Miembro m where m.id=:id")
+    Optional<Miembro> findByIdForUpdate(@Param("id") Long id);
     Optional<Miembro> findByEmail(String email);
     boolean existsByEmail(String email);
     @Query("""

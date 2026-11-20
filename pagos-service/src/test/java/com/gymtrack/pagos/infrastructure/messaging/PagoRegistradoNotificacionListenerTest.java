@@ -25,6 +25,8 @@ class PagoRegistradoNotificacionListenerTest {
     @Mock
     private NotificacionRepository notificacionRepository;
 
+    @Mock private com.gymtrack.pagos.domain.repository.EventoNotificacionProcesadoRepository procesados;
+
     @InjectMocks
     private PagoRegistradoNotificacionListener listener;
 
