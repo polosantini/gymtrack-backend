@@ -39,9 +39,9 @@ class ReservaConcurrenciaTest {
         claseId = clases.save(clase).getId();
     }
 
-    @RepeatedTest(3)
-    void ochoHilosCompitenPorUnCupoSinSobreventa() throws Exception {
-        int hilos = 8;
+    @RepeatedTest(5)
+    void diezHilosCompitenPorUnCupoSinSobreventa() throws Exception {
+        int hilos = 10;
         CyclicBarrier inicio = new CyclicBarrier(hilos);
         ExecutorService pool = Executors.newFixedThreadPool(hilos);
         try {
@@ -56,11 +56,15 @@ class ReservaConcurrenciaTest {
             List<ReservaResponse> respuestas = new ArrayList<>();
             for (var resultado : resultados) respuestas.add(resultado.get(20, TimeUnit.SECONDS));
             assertEquals(1, respuestas.stream().filter(r -> r.estado().equals("CONFIRMADA")).count());
-            assertEquals(7, respuestas.stream().filter(r -> r.estado().equals("EN_ESPERA")).count());
-            assertEquals(7, respuestas.stream().filter(r -> r.estado().equals("EN_ESPERA"))
+            assertEquals(hilos - 1, respuestas.stream().filter(r -> r.estado().equals("EN_ESPERA")).count());
+            assertEquals(hilos - 1, respuestas.stream().filter(r -> r.estado().equals("EN_ESPERA"))
                     .map(ReservaResponse::posicionEspera).distinct().count());
             assertEquals(1, reservas.countByClaseIdAndFechaAndEstado(claseId, fecha, EstadoReserva.CONFIRMADA));
-            assertEquals(8, reservas.count());
+            assertEquals(hilos, reservas.count());
+            List<Integer> posiciones = reservas.findByClaseIdAndFechaAndEstadoOrderByPosicionEsperaAsc(
+                            claseId, fecha, EstadoReserva.EN_ESPERA).stream().map(Reserva::getPosicionEspera).toList();
+            assertEquals(java.util.stream.IntStream.range(1, hilos).boxed().toList(), posiciones);
+            assertEquals(hilos, respuestas.stream().map(ReservaResponse::miembroId).distinct().count());
         } finally {
             pool.shutdownNow();
         }

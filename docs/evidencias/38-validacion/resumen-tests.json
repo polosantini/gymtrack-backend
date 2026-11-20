@@ -1,0 +1,56 @@
+{
+  "base": "9acf3aa4a54b68bb8a6c3eeffc4c23480e33fe83",
+  "issue_titulo": 38,
+  "maven": [
+    {
+      "modulo": "common",
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "modulo": "miembros-service",
+      "tests": 26,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "modulo": "clases-service",
+      "tests": 127,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "modulo": "pagos-service",
+      "tests": 18,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "total_tests": 176,
+  "database": "H2",
+  "docker_ejecutado": false,
+  "control_negativo": {
+    "solo_copia_aislada": true,
+    "sin_lock_fallos_esperados": 5,
+    "confirmadas_observadas": [
+      10,
+      7,
+      2,
+      4,
+      4
+    ],
+    "codigo_entregado_conserva_lock": true
+  },
+  "combinacion_38_39_40": {
+    "tests": 186,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "solo_pruebas_java": true
+  }
+}
