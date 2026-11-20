@@ -94,5 +94,22 @@ services:
       rabbitmq:
         condition: service_healthy
     restart: unless-stopped
+  frontend:
+    image: ghcr.io/polosantini/gymtrack-frontend:${FRONTEND_TAG:-latest}
+    container_name: gymtrack-frontend
+    ports:
+      - ${FRONTEND_PORT:-3000}:80
+    environment:
+      MIEMBROS_URL: http://miembros:8081
+      CLASES_URL: http://clases:8082
+      PAGOS_URL: http://pagos:8083
+    depends_on:
+      miembros:
+        condition: service_started
+      clases:
+        condition: service_started
+      pagos:
+        condition: service_started
+    restart: unless-stopped
 volumes:
   postgres-data: {}

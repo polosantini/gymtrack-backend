@@ -1,6 +1,8 @@
 FROM maven:3.9.9-eclipse-temurin-21 AS build
 WORKDIR /workspace
 ARG SERVICIO
+# Settings globales con un espejo de Maven Central (ver docker/maven/settings.xml).
+COPY docker/maven/settings.xml /usr/share/maven/conf/settings.xml
 COPY pom.xml ./
 COPY common/pom.xml common/pom.xml
 COPY common/src common/src
