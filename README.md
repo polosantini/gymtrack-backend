@@ -416,7 +416,7 @@ gymtrack-backend/
 
 ## Documentación adicional
 
-- [Decisiones de arquitectura (ADR)](docs/adr/README.md)
+- [Decisiones de arquitectura (ADR)](docs/adr)
 - [Informe de patrones y SOLID](docs/informe/)
 - [Guía de #40: Pagos apagado](docs/informe/40-pagos-apagado.md)
 - [Compatibilidad con el frontend](docs/correcciones/COMPATIBILIDAD_FRONTEND.md)
