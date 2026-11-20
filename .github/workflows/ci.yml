@@ -14,5 +14,5 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-          cache: maven
-      - run: mvn -B verify
+      - name: Verificar backend con repositorio Maven limpio
+        run: mvn -B -U "-Dmaven.repo.local=${RUNNER_TEMP}/m2-gymtrack" verify
