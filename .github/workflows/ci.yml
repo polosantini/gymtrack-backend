@@ -15,7 +15,24 @@ jobs:
           distribution: temurin
           java-version: '21'
       - name: Verificar backend con repositorio Maven limpio
-        run: mvn -B -U "-Dmaven.repo.local=${RUNNER_TEMP}/m2-gymtrack" verify
+        shell: bash
+        run: |
+          set -euo pipefail
+          registro="${RUNNER_TEMP}/gymtrack-maven-verify.log"
+          for intento in 1 2 3; do
+            echo "Maven verify: intento ${intento}/3"
+            if mvn -B -U "-Dmaven.repo.local=${RUNNER_TEMP}/m2-gymtrack" verify 2>&1 | tee "$registro"; then
+              exit 0
+            else
+              codigo=${PIPESTATUS[0]}
+            fi
+            if [ "$intento" -eq 3 ] || ! grep -Eq '^\[(ERROR|FATAL)\].*(Could not (find|transfer|resolve) artifact|Non-resolvable parent POM|Failed to read artifact descriptor)' "$registro"; then
+              exit "$codigo"
+            fi
+            espera=$((intento * 30))
+            echo "Fallo de resolucion de dependencias; reintentando en ${espera}s."
+            sleep "$espera"
+          done
 
   validar-docker:
     name: Validar Docker y arranque
@@ -79,6 +96,7 @@ jobs:
       packages: write
     strategy:
       fail-fast: false
+      max-parallel: 1
       matrix:
         servicio: [miembros-service, clases-service, pagos-service]
     steps:
