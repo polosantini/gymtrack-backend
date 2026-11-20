@@ -6,6 +6,9 @@ import com.gymtrack.miembros.domain.model.Membresia;
 import com.gymtrack.miembros.domain.model.Miembro;
 import com.gymtrack.miembros.domain.model.TipoPlanMembresia;
 import com.gymtrack.miembros.domain.repository.MiembroRepository;
+import com.gymtrack.miembros.domain.repository.PagoAplicadoRepository;
+import com.gymtrack.miembros.domain.model.PagoAplicado;
+import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -25,23 +28,31 @@ public class PagoRegistradoListener {
     private static final Set<String> PERIODOS_VALIDOS = Set.of("MENSUAL", "TRIMESTRAL", "ANUAL");
 
     private final MiembroRepository miembroRepository;
+    private final PagoAplicadoRepository pagosAplicados;
 
-    public PagoRegistradoListener(MiembroRepository miembroRepository) {
+    public PagoRegistradoListener(MiembroRepository miembroRepository, PagoAplicadoRepository pagosAplicados) {
+        this.pagosAplicados=pagosAplicados;
         this.miembroRepository = miembroRepository;
     }
 
     @RabbitListener(queues = RabbitConfig.COLA_PAGO_REGISTRADO)
     @Transactional
     public void consumir(PagoRegistrado evento) {
+        if(evento==null || evento.pagoId()==null || evento.miembroId()==null)throw new AmqpRejectAndDontRequeueException("Pago sin identidad");
+        if(evento.plan()==null || evento.periodo()==null || evento.monto()==null || evento.monto().signum()<=0)
+            throw new AmqpRejectAndDontRequeueException("Pago incompleto o monto invalido");
+        if(!"REGISTRADO".equals(evento.estado())) {
+            log.warn("Estado de pago no admitido: {}",evento.estado());return;
+        }
         log.info("Evento recibido pagoId={} miembroId={} plan={} periodo={} monto={} estado={}",
                 evento.pagoId(), evento.miembroId(), evento.plan(),
                 evento.periodo(), evento.monto(), evento.estado());
 
-        Optional<Miembro> opt = miembroRepository.findById(evento.miembroId());
+        Optional<Miembro> opt = miembroRepository.findByIdForUpdate(evento.miembroId());
         if (opt.isEmpty()) {
             log.warn("Miembro no encontrado miembroId={} pagoId={} — evento descartado",
                     evento.miembroId(), evento.pagoId());
-            return;
+            throw new AmqpRejectAndDontRequeueException("Miembro inexistente: "+evento.miembroId());
         }
         Miembro miembro = opt.get();
 
@@ -50,14 +61,21 @@ public class PagoRegistradoListener {
             log.warn("Miembro sin membresía miembroId={} pagoId={} — evento descartado. " +
                             "El flujo correcto exige crear la membresía antes de pagar.",
                     evento.miembroId(), evento.pagoId());
-            return;
+            throw new AmqpRejectAndDontRequeueException("Crear la membresia antes de pagar: "+evento.miembroId());
         }
 
-        if (Objects.equals(membresia.getUltimoPagoId(), evento.pagoId())) {
+        if (pagosAplicados.existsById(evento.pagoId()) || Objects.equals(membresia.getUltimoPagoId(), evento.pagoId())) {
             log.info("Evento duplicado ignorado pagoId={} miembroId={}",
                     evento.pagoId(), evento.miembroId());
             return;
         }
+
+        // Corte de migracion: antes de esta version solo se recordaba el ultimo pago.
+        // Un ID antiguo no registrado se conserva en recuperacion para conciliacion, sin sumar credito a ciegas.
+        if(membresia.getPagosPreviosHasta()==null)
+            membresia.setPagosPreviosHasta(membresia.getUltimoPagoId()==null?0L:membresia.getUltimoPagoId());
+        if(evento.pagoId()<=membresia.getPagosPreviosHasta())
+            throw new AmqpRejectAndDontRequeueException("Pago anterior al registro durable; revisar antes de reaplicar: "+evento.pagoId());
 
         TipoPlanMembresia nuevoPlan;
         try {
@@ -92,15 +110,17 @@ public class PagoRegistradoListener {
 
         LocalDate nuevoVencimiento = calcularVencimiento(base, evento.periodo());
 
-        membresia.setPlan(nuevoPlan);
+        // Un evento antiguo nunca revierte un cambio de plan posterior; su periodo unico si se acredita.
+        if(membresia.getUltimoPagoId()==null || evento.pagoId()>membresia.getUltimoPagoId()) membresia.setPlan(nuevoPlan);
         membresia.setEstado(EstadoMembresia.ACTIVA);
         membresia.setFechaVencimiento(nuevoVencimiento);
-        membresia.setUltimoPagoId(evento.pagoId());
+        if(membresia.getUltimoPagoId()==null || evento.pagoId()>membresia.getUltimoPagoId()) membresia.setUltimoPagoId(evento.pagoId());
+        pagosAplicados.saveAndFlush(new PagoAplicado(evento.pagoId(),evento.miembroId()));
 
         miembroRepository.save(miembro);
 
         log.info("Membresía activada/renovada miembroId={} plan={} fechaInicio={} fechaVencimiento={} pagoId={}",
-                miembro.getId(), nuevoPlan, membresia.getFechaInicio(),
+                miembro.getId(), membresia.getPlan(), membresia.getFechaInicio(),
                 nuevoVencimiento, evento.pagoId());
     }
 

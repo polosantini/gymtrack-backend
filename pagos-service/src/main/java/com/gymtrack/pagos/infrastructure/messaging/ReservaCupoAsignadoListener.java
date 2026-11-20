@@ -2,6 +2,8 @@ package com.gymtrack.pagos.infrastructure.messaging;
 
 import com.gymtrack.common.events.ReservaCupoAsignado;
 import com.gymtrack.pagos.domain.model.Notificacion;
+import com.gymtrack.pagos.domain.model.EventoNotificacionProcesado;
+import com.gymtrack.pagos.domain.repository.EventoNotificacionProcesadoRepository;
 import com.gymtrack.pagos.domain.model.TipoNotificacion;
 import com.gymtrack.pagos.domain.repository.NotificacionRepository;
 import org.slf4j.Logger;
@@ -21,8 +23,10 @@ public class ReservaCupoAsignadoListener {
     private static final DateTimeFormatter FORMATO_HORA = DateTimeFormatter.ofPattern("HH:mm");
 
     private final NotificacionRepository notificacionRepository;
+    private final EventoNotificacionProcesadoRepository procesados;
 
-    public ReservaCupoAsignadoListener(NotificacionRepository notificacionRepository) {
+    public ReservaCupoAsignadoListener(NotificacionRepository notificacionRepository, EventoNotificacionProcesadoRepository procesados) {
+        this.procesados=procesados;
         this.notificacionRepository = notificacionRepository;
     }
 
@@ -37,7 +41,12 @@ public class ReservaCupoAsignadoListener {
             return;
         }
 
+        if(evento.claseNombre()==null || evento.fecha()==null || evento.hora()==null)
+            throw new org.springframework.amqp.AmqpRejectAndDontRequeueException("Asignacion incompleta");
         Long reservaCanceladaId = extraerReservaCanceladaId(mensaje);
+        if(reservaCanceladaId==null)throw new org.springframework.amqp.AmqpRejectAndDontRequeueException("Asignacion sin messageId estable");
+        String clave="cupo:"+reservaCanceladaId;
+        if(procesados.existsById(clave))return;
 
         if (reservaCanceladaId != null
                 && notificacionRepository.existsByTipoAndReferenciaExterna(
@@ -58,6 +67,7 @@ public class ReservaCupoAsignadoListener {
         notificacion.setReferenciaExterna(reservaCanceladaId);
         notificacion.setLeida(false);
 
+        procesados.saveAndFlush(new EventoNotificacionProcesado(clave));
         Notificacion guardada = notificacionRepository.save(notificacion);
 
         log.info("Notificación creada id={} miembroId={} tipo=CUPO_LIBERADO reservaCanceladaId={}",

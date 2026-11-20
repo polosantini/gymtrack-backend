@@ -6,4 +6,5 @@ import java.util.List;
 
 public interface NotificacionService {
     List<NotificacionResponse> listarPorMiembro(Long miembroId);
+    com.gymtrack.pagos.web.dto.NotificacionResponse marcarLeida(Long id);
 }

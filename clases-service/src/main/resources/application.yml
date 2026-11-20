@@ -10,6 +10,19 @@ spring:
     port: ${RABBIT_PORT:5672}
     username: ${RABBIT_USER:gymtrack}
     password: ${RABBIT_PASSWORD:gymtrack}
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    template:
+      mandatory: true
+    listener:
+      simple:
+        default-requeue-rejected: false
+        retry:
+          enabled: true
+          max-attempts: 3
+          initial-interval: 500ms
+          multiplier: 2
+          max-interval: 2s
   sql:
     init:
       mode: always
@@ -18,9 +31,12 @@ spring:
       ddl-auto: update
     defer-datasource-initialization: true
     show-sql: true
-
 server:
   port: 8082
-
 miembros:
   base-url: ${MIEMBROS_BASE_URL:http://localhost:8081}
+gymtrack:
+  eventos:
+    confirmar: true
+    reintentos-auto: true
+    reintento-ms: 5000

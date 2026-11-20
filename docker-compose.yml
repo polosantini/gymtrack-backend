@@ -8,12 +8,12 @@ services:
       POSTGRES_DB: postgres
       TZ: America/Bogota
     ports:
-    - ${POSTGRES_PORT:-5432}:5432
+      - ${POSTGRES_PORT:-5432}:5432
     volumes:
-    - postgres-data:/var/lib/postgresql/data
-    - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
-      test: 'pg_isready -U "$${POSTGRES_USER}" -d postgres'
+      test: pg_isready -U "$${POSTGRES_USER}" -d postgres
       interval: 5s
       timeout: 5s
       retries: 10
@@ -24,17 +24,17 @@ services:
       RABBITMQ_DEFAULT_USER: ${RABBIT_USER:-gymtrack}
       RABBITMQ_DEFAULT_PASS: ${RABBIT_PASSWORD:-gymtrack}
     ports:
-    - ${RABBITMQ_AMQP_PORT:-5672}:5672
-    - ${RABBITMQ_MANAGEMENT_PORT:-15672}:15672
+      - ${RABBITMQ_AMQP_PORT:-5672}:5672
+      - ${RABBITMQ_MANAGEMENT_PORT:-15672}:15672
     healthcheck:
-      test: "rabbitmq-diagnostics ping"
+      test: rabbitmq-diagnostics ping
       interval: 10s
       timeout: 5s
       retries: 10
   miembros:
     image: ghcr.io/${GHCR_NAMESPACE:-polosantini/gymtrack-backend}/miembros-service:${IMAGE_TAG:-latest}
     ports:
-    - ${MIEMBROS_PORT:-8081}:8081
+      - ${MIEMBROS_PORT:-8081}:8081
     environment:
       DB_URL: jdbc:postgresql://postgres:5432/gymtrack_miembros
       DB_USER: ${DB_USER:-gymtrack}
@@ -54,7 +54,7 @@ services:
   clases:
     image: ghcr.io/${GHCR_NAMESPACE:-polosantini/gymtrack-backend}/clases-service:${IMAGE_TAG:-latest}
     ports:
-    - ${CLASES_PORT:-8082}:8082
+      - ${CLASES_PORT:-8082}:8082
     environment:
       DB_URL: jdbc:postgresql://postgres:5432/gymtrack_clases
       DB_USER: ${DB_USER:-gymtrack}
@@ -77,7 +77,7 @@ services:
   pagos:
     image: ghcr.io/${GHCR_NAMESPACE:-polosantini/gymtrack-backend}/pagos-service:${IMAGE_TAG:-latest}
     ports:
-    - ${PAGOS_PORT:-8083}:8083
+      - ${PAGOS_PORT:-8083}:8083
     environment:
       DB_URL: jdbc:postgresql://postgres:5432/gymtrack_pagos
       DB_USER: ${DB_USER:-gymtrack}
@@ -94,20 +94,5 @@ services:
       rabbitmq:
         condition: service_healthy
     restart: unless-stopped
-
-  frontend:
-    image: ghcr.io/polosantini/gymtrack-frontend:${FRONTEND_TAG:-latest}
-    ports:
-      - "3000:80"
-    environment:
-      MIEMBROS_URL: http://miembros:8081
-      CLASES_URL: http://clases:8082
-      PAGOS_URL: http://pagos:8083
-    depends_on:
-      - miembros
-      - clases
-      - pagos
-    restart: unless-stopped
-
 volumes:
-  postgres-data: null
+  postgres-data: {}

@@ -34,6 +34,8 @@ class PagoServiceImplTest {
     @Mock
     private ApplicationEventPublisher eventPublisher;
 
+    @Mock private com.gymtrack.pagos.application.port.ValidadorMembresiaPago validadorMembresia;
+
     @InjectMocks
     private PagoServiceImpl service;
 
@@ -71,5 +73,14 @@ class PagoServiceImplTest {
         assertThat(evento.periodo()).isEqualTo("MENSUAL");
         assertThat(evento.monto()).isEqualByComparingTo("50000.00");
         assertThat(evento.estado()).isEqualTo("REGISTRADO");
+    }
+    @Test
+    void rechazoDeValidacionOcurreAntesDeGuardarOEmitirEvento() {
+        org.mockito.Mockito.doThrow(new com.gymtrack.pagos.domain.exception.MiembroSinMembresiaException())
+            .when(validadorMembresia).validar(1L);
+        var request=new PagoRequest(1L,"BASICO","MENSUAL",new BigDecimal("50000"),"EFECTIVO");
+        org.junit.jupiter.api.Assertions.assertThrows(com.gymtrack.pagos.domain.exception.MiembroSinMembresiaException.class,
+            ()->service.crearPago(request));
+        org.mockito.Mockito.verifyNoInteractions(pagoRepository,eventPublisher);
     }
 }

@@ -1,0 +1,108 @@
+{
+  "version": 2,
+  "base": "f492e03e0cc70126e21a5c050a8f8e57c2e37109",
+  "alcance": "Solo backend",
+  "frontend_referencia": "da1b765f6d138794cc71da6948d4a27b476095c7",
+  "maven_verify": {
+    "tests": 225,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "por_modulo": {
+    "common": {
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "miembros-service": {
+      "tests": 36,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "clases-service": {
+      "tests": 147,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "pagos-service": {
+      "tests": 36,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "actionlint": "OK",
+  "compose_config": "OK",
+  "nativo": {
+    "resultado": "OK",
+    "sin_membresia_http": 409,
+    "sin_membresia_pagos_guardados": 0,
+    "sin_membresia_notificaciones": 0,
+    "miembro_inexistente_http": 404,
+    "miembros_caido_http": 503,
+    "miembros_caido_segundos": 2.524610456001028,
+    "motor": "JVM + H2 + RabbitMQ 4.0.5 reales; sin Docker/PostgreSQL",
+    "integridad": {
+      "resultado": "OK",
+      "pasos": [
+        {
+          "paso": "pago sin membresia",
+          "status": 409,
+          "pagosGuardados": 0
+        },
+        {
+          "paso": "cuota concurrente FULL",
+          "confirmadas": 1,
+          "rechazadas": 5,
+          "miembroId": 9
+        },
+        {
+          "paso": "cuota concurrente BASICO",
+          "confirmadas": 2,
+          "rechazadas": 4,
+          "miembroId": 10
+        },
+        {
+          "paso": "duplicado A-B-A-C",
+          "vencimientoFinal": "2027-02-20",
+          "pagoB": 3,
+          "pagoC": 4
+        },
+        {
+          "paso": "entrada invalida",
+          "status": 400
+        }
+      ],
+      "fixtures": [
+        {
+          "miembroId": 9,
+          "pagoId": 1,
+          "plan": "FULL"
+        },
+        {
+          "miembroId": 10,
+          "pagoId": 2,
+          "plan": "BASICO"
+        }
+      ]
+    },
+    "broker_apagado": {
+      "cancelar_http": 200,
+      "pago_http": 503,
+      "pagos_guardados_delta": 0,
+      "antes_de_restaurar_espera": "EN_ESPERA",
+      "antes_de_restaurar_acceso": false
+    },
+    "tras_restaurar": {
+      "pago_reintentado_http": 201,
+      "acceso": true,
+      "reserva": "CONFIRMADA",
+      "notificaciones_cupo": 1
+    }
+  },
+  "docker_postgresql": "Pendiente de ejecucion en check del PR; el workflow incluye prueba de integridad con Compose."
+}

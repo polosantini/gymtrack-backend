@@ -14,10 +14,16 @@ spring:
       simple:
         default-requeue-rejected: false
         acknowledge-mode: auto
-        task:
-          scheduling:
-            pool:
-              size: 1
+        retry:
+          enabled: true
+          max-attempts: 3
+          initial-interval: 500ms
+          multiplier: 2
+          max-interval: 2s
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    template:
+      mandatory: true
   sql:
     init:
       mode: always
@@ -26,12 +32,18 @@ spring:
       ddl-auto: update
     defer-datasource-initialization: true
     show-sql: true
-
+  task:
+    scheduling:
+      pool:
+        size: 1
 server:
   port: 8081
-
-  gymtrack:
-    vencimientos:
-      cron: "0 0 8 * * *"
-      zone: "America/Bogota"
-      ventana-dias: 7
+gymtrack:
+  vencimientos:
+    cron: 0 0 8 * * *
+    zone: America/Bogota
+    ventana-dias: 7
+  eventos:
+    confirmar: true
+    reintentos-auto: true
+    reintento-ms: 5000
