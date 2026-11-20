@@ -419,8 +419,6 @@ gymtrack-backend/
 - [Decisiones de arquitectura (ADR)](docs/adr/README.md)
 - [Informe de patrones y SOLID](docs/informe/)
 - [Guía de #40: Pagos apagado](docs/informe/40-pagos-apagado.md)
-- [Correcciones de integridad del backend](docs/correcciones/LEEME_BACKEND_CORREGIDO.md): coordinación por miembro, eventos pendientes durables, deduplicación, recuperación de consumidores y regresiones HTTP/AMQP.
-- [Validación de pagos antes del registro (V2)](docs/correcciones/VALIDACION_PREVIA_PAGOS.md)
 - [Compatibilidad con el frontend](docs/correcciones/COMPATIBILIDAD_FRONTEND.md)
 
 ## Flujo de trabajo del equipo
