@@ -1,305 +1,2234 @@
 {
   "info": {
-    "name": "GymTrack",
-    "description": "Colección compartida de endpoints del proyecto GymTrack",
+    "name": "GymTrack — Pruebas de endpoints (datos de demo)",
+    "description": "Miembros 8081, Clases 8082, Pagos 8083. Ejecutar carpeta por carpeta, en orden, con BD limpia (docker compose down -v && docker compose up -d) y los 3 servicios arriba.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Fechas ancladas al PRÓXIMO MARTES (hoy si es martes), igual que el data.sql de clases-service.",
+          "const hoy = new Date();",
+          "const base = new Date(Date.UTC(hoy.getFullYear(), hoy.getMonth(), hoy.getDate()));",
+          "const isodow = base.getUTCDay() === 0 ? 7 : base.getUTCDay();",
+          "const add = (d, n) => new Date(d.getTime() + n * 86400000);",
+          "const iso = d => d.toISOString().slice(0, 10);",
+          "const martes = add(base, (9 - isodow) % 7);",
+          "pm.collectionVariables.set('fechaMartes', iso(martes));",
+          "pm.collectionVariables.set('fechaMartesAnterior', iso(add(martes, -7)));",
+          "pm.collectionVariables.set('fechaMiercoles', iso(add(martes, 1)));",
+          "pm.collectionVariables.set('fechaViernes', iso(add(martes, 3)));"
+        ]
+      }
+    }
+  ],
   "item": [
     {
-      "name": "Miembros",
+      "name": "1. Miembros y planes (lectura)",
       "item": [
         {
-          "name": "Registrar miembro",
+          "name": "GET Listar miembros (7 de demo)",
           "request": {
-            "method": "POST",
-            "header": [
-              { "key": "Content-Type", "value": "application/json" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"nombre\": \"Ana\",\n  \"email\": \"ana@test.com\"\n}",
-              "options": { "raw": { "language": "json" } }
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrlMiembros}}/api/miembros",
+              "host": [
+                "{{baseUrlMiembros}}"
+              ],
+              "path": [
+                "api",
+                "miembros"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status esperado (200)\", () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const j = pm.response.json();",
+                  "pm.test(\"al menos 7 miembros\", () => pm.expect(j.length).to.be.at.least(7));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Miembro 4 (Diego) con membresía",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrlMiembros}}/api/miembros/4",
+              "host": [
+                "{{baseUrlMiembros}}"
+              ],
+              "path": [
+                "api",
+                "miembros",
+                "4"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status esperado (200)\", () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const j = pm.response.json();",
+                  "pm.test(\"j.nombre = Diego\", () => pm.expect(j.nombre).to.eql(\"Diego\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Miembro inexistente → 404",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrlMiembros}}/api/miembros/999999",
+              "host": [
+                "{{baseUrlMiembros}}"
+              ],
+              "path": [
+                "api",
+                "miembros",
+                "999999"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status esperado (404)\", () => pm.expect(pm.response.code).to.be.oneOf([404]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Planes y precios",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrlMiembros}}/api/planes",
+              "host": [
+                "{{baseUrlMiembros}}"
+              ],
+              "path": [
+                "api",
+                "planes"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status esperado (200)\", () => pm.expect(pm.response.code).to.be.oneOf([200]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Acceso por miembro de demo (/acceso)",
+          "item": [
+            {
+              "name": "Acceso Ana (id 1) → SUSPENDIDA: activa=false",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrlMiembros}}/api/miembros/1/acceso",
+                  "host": [
+                    "{{baseUrlMiembros}}"
+                  ],
+                  "path": [
+                    "api",
+                    "miembros",
+                    "1",
+                    "acceso"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status esperado (200)\", () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                      "const j = pm.response.json();",
+                      "pm.test(\"j.activa = False\", () => pm.expect(j.activa).to.eql(false));"
+                    ]
+                  }
+                }
+              ]
             },
-            "url": {
-              "raw": "http://localhost:8081/api/miembros",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "8081",
-              "path": ["api", "miembros"]
-            }
-          }
-        },
-        {
-          "name": "Listar miembros",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "http://localhost:8081/api/miembros",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "8081",
-              "path": ["api", "miembros"]
-            }
-          }
-        },
-        {
-          "name": "Obtener miembro por id",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "http://localhost:8081/api/miembros/1",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "8081",
-              "path": ["api", "miembros", "1"]
-            }
-          }
-        },
-        {
-          "name": "Crear membresía",
-          "request": {
-            "method": "POST",
-            "header": [
-              { "key": "Content-Type", "value": "application/json" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"plan\": \"BASICO\"\n}",
-              "options": { "raw": { "language": "json" } }
+            {
+              "name": "Acceso Luis (id 2) → activa=true, plan=FULL",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrlMiembros}}/api/miembros/2/acceso",
+                  "host": [
+                    "{{baseUrlMiembros}}"
+                  ],
+                  "path": [
+                    "api",
+                    "miembros",
+                    "2",
+                    "acceso"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status esperado (200)\", () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                      "const j = pm.response.json();",
+                      "pm.test(\"j.activa = True\", () => pm.expect(j.activa).to.eql(true));",
+                      "pm.test(\"j.plan = FULL\", () => pm.expect(j.plan).to.eql(\"FULL\"));"
+                    ]
+                  }
+                }
+              ]
             },
-            "url": {
-              "raw": "http://localhost:8081/api/miembros/1/membresias",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "8081",
-              "path": ["api", "miembros", "1", "membresias"]
+            {
+              "name": "Acceso Sara (id 3) → SUSPENDIDA: activa=false",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrlMiembros}}/api/miembros/3/acceso",
+                  "host": [
+                    "{{baseUrlMiembros}}"
+                  ],
+                  "path": [
+                    "api",
+                    "miembros",
+                    "3",
+                    "acceso"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status esperado (200)\", () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                      "const j = pm.response.json();",
+                      "pm.test(\"j.activa = False\", () => pm.expect(j.activa).to.eql(false));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Acceso Diego (id 4) → activa=true, plan=BASICO",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrlMiembros}}/api/miembros/4/acceso",
+                  "host": [
+                    "{{baseUrlMiembros}}"
+                  ],
+                  "path": [
+                    "api",
+                    "miembros",
+                    "4",
+                    "acceso"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status esperado (200)\", () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                      "const j = pm.response.json();",
+                      "pm.test(\"j.activa = True\", () => pm.expect(j.activa).to.eql(true));",
+                      "pm.test(\"j.plan = BASICO\", () => pm.expect(j.plan).to.eql(\"BASICO\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Acceso Carlos (id 5) → VENCIDA: activa=false",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrlMiembros}}/api/miembros/5/acceso",
+                  "host": [
+                    "{{baseUrlMiembros}}"
+                  ],
+                  "path": [
+                    "api",
+                    "miembros",
+                    "5",
+                    "acceso"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status esperado (200)\", () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                      "const j = pm.response.json();",
+                      "pm.test(\"j.activa = False\", () => pm.expect(j.activa).to.eql(false));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Acceso María (id 6) → activa=true, plan=PREMIUM",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrlMiembros}}/api/miembros/6/acceso",
+                  "host": [
+                    "{{baseUrlMiembros}}"
+                  ],
+                  "path": [
+                    "api",
+                    "miembros",
+                    "6",
+                    "acceso"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status esperado (200)\", () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                      "const j = pm.response.json();",
+                      "pm.test(\"j.activa = True\", () => pm.expect(j.activa).to.eql(true));",
+                      "pm.test(\"j.plan = PREMIUM\", () => pm.expect(j.plan).to.eql(\"PREMIUM\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Acceso Pedro (id 7) → activa=false, plan=None",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrlMiembros}}/api/miembros/7/acceso",
+                  "host": [
+                    "{{baseUrlMiembros}}"
+                  ],
+                  "path": [
+                    "api",
+                    "miembros",
+                    "7",
+                    "acceso"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status esperado (200)\", () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                      "const j = pm.response.json();",
+                      "pm.test(\"j.activa = False\", () => pm.expect(j.activa).to.eql(false));",
+                      "pm.test(\"j.plan = None\", () => pm.expect(j.plan).to.eql(null));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Acceso miembro inexistente → 404",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrlMiembros}}/api/miembros/999999/acceso",
+                  "host": [
+                    "{{baseUrlMiembros}}"
+                  ],
+                  "path": [
+                    "api",
+                    "miembros",
+                    "999999",
+                    "acceso"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status esperado (404)\", () => pm.expect(pm.response.code).to.be.oneOf([404]));"
+                    ]
+                  }
+                }
+              ]
             }
-          }
-        },
-        {
-          "name": "Listar planes",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "http://localhost:8081/api/planes",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "8081",
-              "path": ["api", "planes"]
-            }
-          }
+          ]
         }
       ]
     },
     {
-      "name": "Pagos",
+      "name": "2. Clases y reservas (lectura)",
       "item": [
         {
-          "name": "Registrar pago",
-          "request": {
-            "method": "POST",
-            "header": [
-              { "key": "Content-Type", "value": "application/json" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"miembroId\": 1,\n  \"plan\": \"BASICO\",\n  \"periodo\": \"MENSUAL\",\n  \"monto\": 50000,\n  \"metodo\": \"EFECTIVO\"\n}",
-              "options": { "raw": { "language": "json" } }
-            },
-            "url": {
-              "raw": "http://localhost:8083/api/pagos",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "8083",
-              "path": ["api", "pagos"]
-            }
-          }
-        },
-        {
-          "name": "Listar pagos por miembro",
+          "name": "GET Listar clases (Spinning, Yoga, Funcional)",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "http://localhost:8083/api/pagos?miembroId=1",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "8083",
-              "path": ["api", "pagos"],
-              "query": [
-                { "key": "miembroId", "value": "1" }
+              "raw": "{{baseUrlClases}}/api/clases",
+              "host": [
+                "{{baseUrlClases}}"
+              ],
+              "path": [
+                "api",
+                "clases"
               ]
             }
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status esperado (200)\", () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const j = pm.response.json();",
+                  "pm.test(\"al menos 3 clases\", () => pm.expect(j.length).to.be.at.least(3));"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Listar notificaciones por miembro",
+          "name": "GET Spinning martes: 3 confirmados + 1 en espera",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "http://localhost:8083/api/notificaciones?miembroId=1",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "8083",
-              "path": ["api", "notificaciones"],
+              "raw": "{{baseUrlClases}}/api/clases/1/reservas?fecha={{fechaMartes}}",
+              "host": [
+                "{{baseUrlClases}}"
+              ],
+              "path": [
+                "api",
+                "clases",
+                "1",
+                "reservas"
+              ],
               "query": [
-                { "key": "miembroId", "value": "1" }
+                {
+                  "key": "fecha",
+                  "value": "{{fechaMartes}}"
+                }
               ]
             }
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status esperado (200)\", () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const j = pm.response.json();",
+                  "pm.test(\"3 confirmados\", () => pm.expect(j.confirmados.length).to.eql(3));",
+                  "pm.test(\"1 en espera (Diego)\", () => pm.expect(j.enEspera.length).to.eql(1));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Spinning martes anterior (historial)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrlClases}}/api/clases/1/reservas?fecha={{fechaMartesAnterior}}",
+              "host": [
+                "{{baseUrlClases}}"
+              ],
+              "path": [
+                "api",
+                "clases",
+                "1",
+                "reservas"
+              ],
+              "query": [
+                {
+                  "key": "fecha",
+                  "value": "{{fechaMartesAnterior}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status esperado (200)\", () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const j = pm.response.json();",
+                  "pm.test(\"2 confirmados\", () => pm.expect(j.confirmados.length).to.eql(2));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Reservas de Luis (historial, asistió=false)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrlClases}}/api/reservas?miembroId=2",
+              "host": [
+                "{{baseUrlClases}}"
+              ],
+              "path": [
+                "api",
+                "reservas"
+              ],
+              "query": [
+                {
+                  "key": "miembroId",
+                  "value": "2"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status esperado (200)\", () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const j = pm.response.json();",
+                  "pm.test(\"tiene reservas\", () => pm.expect(j.length).to.be.at.least(2));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Clase inexistente → 404",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrlClases}}/api/clases/999999/reservas?fecha={{fechaMartes}}",
+              "host": [
+                "{{baseUrlClases}}"
+              ],
+              "path": [
+                "api",
+                "clases",
+                "999999",
+                "reservas"
+              ],
+              "query": [
+                {
+                  "key": "fecha",
+                  "value": "{{fechaMartes}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status esperado (404)\", () => pm.expect(pm.response.code).to.be.oneOf([404]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Fecha inválida → 400",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrlClases}}/api/clases/1/reservas?fecha=no-es-fecha",
+              "host": [
+                "{{baseUrlClases}}"
+              ],
+              "path": [
+                "api",
+                "clases",
+                "1",
+                "reservas"
+              ],
+              "query": [
+                {
+                  "key": "fecha",
+                  "value": "no-es-fecha"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status esperado (400)\", () => pm.expect(pm.response.code).to.be.oneOf([400]));"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Clases y Reservas",
+      "name": "3. Reglas de reserva (modifica datos)",
       "item": [
         {
-          "name": "Crear clase",
+          "name": "Diego repite Spinning martes → 409 duplicada",
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
+            "url": {
+              "raw": "{{baseUrlClases}}/api/reservas",
+              "host": [
+                "{{baseUrlClases}}"
+              ],
+              "path": [
+                "api",
+                "reservas"
+              ]
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nombre\": \"Spinning\",\n  \"instructor\": \"Carlos Ruiz\",\n  \"dias\": [\n    \"MARTES\",\n    \"JUEVES\"\n  ],\n  \"hora\": \"18:00\",\n  \"duracionMinutos\": 45,\n  \"aforo\": 3,\n  \"sala\": \"Sala 1\"\n}",
-              "options": { "raw": { "language": "json" } }
-            },
-            "url": {
-              "raw": "http://localhost:8082/api/clases",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "8082",
-              "path": ["api", "clases"]
+              "raw": "{\n  \"miembroId\": 4,\n  \"claseId\": 1,\n  \"fecha\": \"{{fechaMartes}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status esperado (409)\", () => pm.expect(pm.response.code).to.be.oneOf([409]));"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Listar clases (catálogo por fecha)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "http://localhost:8082/api/clases?fecha=2026-11-17",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "8082",
-              "path": ["api", "clases"],
-              "query": [
-                { "key": "fecha", "value": "2026-11-17" }
-              ]
-            }
-          }
-        },
-        {
-          "name": "Obtener clase por id",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "http://localhost:8082/api/clases/1",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "8082",
-              "path": ["api", "clases", "1"]
-            }
-          }
-        },
-        {
-          "name": "Reservar clase",
+          "name": "Ana (SUSPENDIDA) reserva Yoga → rechazo",
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
+            "url": {
+              "raw": "{{baseUrlClases}}/api/reservas",
+              "host": [
+                "{{baseUrlClases}}"
+              ],
+              "path": [
+                "api",
+                "reservas"
+              ]
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"miembroId\": 1,\n  \"claseId\": 2,\n  \"fecha\": \"2026-11-17\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "raw": "{\n  \"miembroId\": 1,\n  \"claseId\": 2,\n  \"fecha\": \"{{fechaMartes}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status esperado (400,409,422)\", () => pm.expect(pm.response.code).to.be.oneOf([400,409,422]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sara (SUSPENDIDA) reserva Yoga → rechazo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrlClases}}/api/reservas",
+              "host": [
+                "{{baseUrlClases}}"
+              ],
+              "path": [
+                "api",
+                "reservas"
+              ]
             },
-            "url": {
-              "raw": "http://localhost:8082/api/reservas",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "8082",
-              "path": ["api", "reservas"]
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"miembroId\": 3,\n  \"claseId\": 2,\n  \"fecha\": \"{{fechaMartes}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status esperado (400,409,422)\", () => pm.expect(pm.response.code).to.be.oneOf([400,409,422]));"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Listar reservas por miembro",
+          "name": "Carlos (VENCIDA) reserva Yoga → rechazo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrlClases}}/api/reservas",
+              "host": [
+                "{{baseUrlClases}}"
+              ],
+              "path": [
+                "api",
+                "reservas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"miembroId\": 5,\n  \"claseId\": 2,\n  \"fecha\": \"{{fechaMartes}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status esperado (400,409,422)\", () => pm.expect(pm.response.code).to.be.oneOf([400,409,422]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Pedro (sin membresía) reserva Yoga → rechazo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrlClases}}/api/reservas",
+              "host": [
+                "{{baseUrlClases}}"
+              ],
+              "path": [
+                "api",
+                "reservas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"miembroId\": 7,\n  \"claseId\": 2,\n  \"fecha\": \"{{fechaMartes}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status esperado (400,409,422)\", () => pm.expect(pm.response.code).to.be.oneOf([400,409,422]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Luis (FULL) 2ª reserva el mismo martes → rechazo (1 por día)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrlClases}}/api/reservas",
+              "host": [
+                "{{baseUrlClases}}"
+              ],
+              "path": [
+                "api",
+                "reservas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"miembroId\": 2,\n  \"claseId\": 2,\n  \"fecha\": \"{{fechaMartes}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status esperado (400,409,422)\", () => pm.expect(pm.response.code).to.be.oneOf([400,409,422]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "María (PREMIUM) en Spinning lleno → EN_ESPERA posición 2",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrlClases}}/api/reservas",
+              "host": [
+                "{{baseUrlClases}}"
+              ],
+              "path": [
+                "api",
+                "reservas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"miembroId\": 6,\n  \"claseId\": 1,\n  \"fecha\": \"{{fechaMartes}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status esperado (200,201)\", () => pm.expect(pm.response.code).to.be.oneOf([200,201]));",
+                  "const j = pm.response.json();",
+                  "pm.test(\"j.estado = EN_ESPERA\", () => pm.expect(j.estado).to.eql(\"EN_ESPERA\"));",
+                  "if (j.id) pm.collectionVariables.set(\"reservaIdMaria\", j.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Diego (BÁSICO) 2ª de la semana: Funcional miércoles → CONFIRMADA",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrlClases}}/api/reservas",
+              "host": [
+                "{{baseUrlClases}}"
+              ],
+              "path": [
+                "api",
+                "reservas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"miembroId\": 4,\n  \"claseId\": 3,\n  \"fecha\": \"{{fechaMiercoles}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "La espera de Spinning ya cuenta como la 1ª reserva de la semana."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status esperado (200,201)\", () => pm.expect(pm.response.code).to.be.oneOf([200,201]));",
+                  "const j = pm.response.json();",
+                  "pm.test(\"j.estado = CONFIRMADA\", () => pm.expect(j.estado).to.eql(\"CONFIRMADA\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Diego (BÁSICO) 3ª de la semana: Funcional viernes → RECHAZO (Strategy)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrlClases}}/api/reservas",
+              "host": [
+                "{{baseUrlClases}}"
+              ],
+              "path": [
+                "api",
+                "reservas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"miembroId\": 4,\n  \"claseId\": 3,\n  \"fecha\": \"{{fechaViernes}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status esperado (400,409,422)\", () => pm.expect(pm.response.code).to.be.oneOf([400,409,422]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Luis (FULL) Funcional miércoles → CONFIRMADA",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrlClases}}/api/reservas",
+              "host": [
+                "{{baseUrlClases}}"
+              ],
+              "path": [
+                "api",
+                "reservas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"miembroId\": 2,\n  \"claseId\": 3,\n  \"fecha\": \"{{fechaMiercoles}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status esperado (200,201)\", () => pm.expect(pm.response.code).to.be.oneOf([200,201]));",
+                  "const j = pm.response.json();",
+                  "pm.test(\"j.estado = CONFIRMADA\", () => pm.expect(j.estado).to.eql(\"CONFIRMADA\"));",
+                  "if (j.id) pm.collectionVariables.set(\"reservaIdLuis\", j.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "María (PREMIUM) Funcional miércoles + viernes sin límite",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrlClases}}/api/reservas",
+              "host": [
+                "{{baseUrlClases}}"
+              ],
+              "path": [
+                "api",
+                "reservas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"miembroId\": 6,\n  \"claseId\": 3,\n  \"fecha\": \"{{fechaViernes}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status esperado (200,201)\", () => pm.expect(pm.response.code).to.be.oneOf([200,201]));",
+                  "const j = pm.response.json();",
+                  "pm.test(\"j.estado = CONFIRMADA\", () => pm.expect(j.estado).to.eql(\"CONFIRMADA\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Fecha que no corresponde a la clase → 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrlClases}}/api/reservas",
+              "host": [
+                "{{baseUrlClases}}"
+              ],
+              "path": [
+                "api",
+                "reservas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"miembroId\": 6,\n  \"claseId\": 1,\n  \"fecha\": \"{{fechaMiercoles}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status esperado (400)\", () => pm.expect(pm.response.code).to.be.oneOf([400]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Clase inexistente → 404",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrlClases}}/api/reservas",
+              "host": [
+                "{{baseUrlClases}}"
+              ],
+              "path": [
+                "api",
+                "reservas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"miembroId\": 6,\n  \"claseId\": 999999,\n  \"fecha\": \"{{fechaMartes}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status esperado (404)\", () => pm.expect(pm.response.code).to.be.oneOf([404]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reservar sin miembroId → 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrlClases}}/api/reservas",
+              "host": [
+                "{{baseUrlClases}}"
+              ],
+              "path": [
+                "api",
+                "reservas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"claseId\": 1,\n  \"fecha\": \"{{fechaMartes}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status esperado (400)\", () => pm.expect(pm.response.code).to.be.oneOf([400]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Spinning martes: ahora 2 en espera ordenados por posición",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "http://localhost:8082/api/reservas?miembroId=1",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "8082",
-              "path": ["api", "reservas"],
+              "raw": "{{baseUrlClases}}/api/clases/1/reservas?fecha={{fechaMartes}}",
+              "host": [
+                "{{baseUrlClases}}"
+              ],
+              "path": [
+                "api",
+                "clases",
+                "1",
+                "reservas"
+              ],
               "query": [
-                { "key": "miembroId", "value": "1" }
+                {
+                  "key": "fecha",
+                  "value": "{{fechaMartes}}"
+                }
               ]
             }
-          }
-        },
-        {
-          "name": "Reservas de una clase por fecha",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "http://localhost:8082/api/clases/1/reservas?fecha=2026-11-17",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "8082",
-              "path": ["api", "clases", "1", "reservas"],
-              "query": [
-                { "key": "fecha", "value": "2026-11-17" }
-              ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status esperado (200)\", () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const j = pm.response.json();",
+                  "pm.test(\"2 en espera\", () => pm.expect(j.enEspera.length).to.eql(2));"
+                ]
+              }
             }
-          }
-        },
+          ]
+        }
+      ]
+    },
+    {
+      "name": "4. Asistencia y cancelación",
+      "item": [
         {
-          "name": "Cancelar reserva",
-          "request": {
-            "method": "PATCH",
-            "header": [],
-            "url": {
-              "raw": "http://localhost:8082/api/reservas/5/cancelar",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "8082",
-              "path": ["api", "reservas", "5", "cancelar"]
-            }
-          }
-        },
-        {
-          "name": "Marcar asistencia",
+          "name": "PATCH Asistencia reserva 2 (Luis) = true",
           "request": {
             "method": "PATCH",
             "header": [
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
+            "url": {
+              "raw": "{{baseUrlClases}}/api/reservas/2/asistencia",
+              "host": [
+                "{{baseUrlClases}}"
+              ],
+              "path": [
+                "api",
+                "reservas",
+                "2",
+                "asistencia"
+              ]
+            },
             "body": {
               "mode": "raw",
               "raw": "{\n  \"asistio\": true\n}",
-              "options": { "raw": { "language": "json" } }
-            },
-            "url": {
-              "raw": "http://localhost:8082/api/reservas/1/asistencia",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "8082",
-              "path": ["api", "reservas", "1", "asistencia"]
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status esperado (200)\", () => pm.expect(pm.response.code).to.be.oneOf([200]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH Asistencia reserva inexistente → 404",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrlClases}}/api/reservas/999999/asistencia",
+              "host": [
+                "{{baseUrlClases}}"
+              ],
+              "path": [
+                "api",
+                "reservas",
+                "999999",
+                "asistencia"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"asistio\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status esperado (404)\", () => pm.expect(pm.response.code).to.be.oneOf([404]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH Cancelar reserva 1 (Ana, CONFIRMADA) → libera cupo",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrlClases}}/api/reservas/1/cancelar",
+              "host": [
+                "{{baseUrlClases}}"
+              ],
+              "path": [
+                "api",
+                "reservas",
+                "1",
+                "cancelar"
+              ]
+            },
+            "description": "Paso 4 de la demo. En Fase 3 esto publica reserva.cancelada y Diego (en espera, posición 1) pasa a CONFIRMADA."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status esperado (200)\", () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const j = pm.response.json();",
+                  "pm.test(\"j.estado = CANCELADA\", () => pm.expect(j.estado).to.eql(\"CANCELADA\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH Cancelar reserva inexistente → 404",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrlClases}}/api/reservas/999999/cancelar",
+              "host": [
+                "{{baseUrlClases}}"
+              ],
+              "path": [
+                "api",
+                "reservas",
+                "999999",
+                "cancelar"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status esperado (404)\", () => pm.expect(pm.response.code).to.be.oneOf([404]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Spinning martes tras cancelar",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrlClases}}/api/clases/1/reservas?fecha={{fechaMartes}}",
+              "host": [
+                "{{baseUrlClases}}"
+              ],
+              "path": [
+                "api",
+                "clases",
+                "1",
+                "reservas"
+              ],
+              "query": [
+                {
+                  "key": "fecha",
+                  "value": "{{fechaMartes}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status esperado (200)\", () => pm.expect(pm.response.code).to.be.oneOf([200]));"
+                ]
+              }
+            }
+          ]
         }
       ]
+    },
+    {
+      "name": "5. Pagos y notificaciones",
+      "item": [
+        {
+          "name": "GET Pagos de Ana (1 de demo)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrlPagos}}/api/pagos?miembroId=1",
+              "host": [
+                "{{baseUrlPagos}}"
+              ],
+              "path": [
+                "api",
+                "pagos"
+              ],
+              "query": [
+                {
+                  "key": "miembroId",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status esperado (200)\", () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const j = pm.response.json();",
+                  "pm.test(\"≥1 pago\", () => pm.expect(j.length).to.be.at.least(1));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Notificaciones de Ana (CONFIRMACION_PAGO)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrlPagos}}/api/notificaciones?miembroId=1",
+              "host": [
+                "{{baseUrlPagos}}"
+              ],
+              "path": [
+                "api",
+                "notificaciones"
+              ],
+              "query": [
+                {
+                  "key": "miembroId",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status esperado (200)\", () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const j = pm.response.json();",
+                  "pm.test(\"≥1 notificación\", () => pm.expect(j.length).to.be.at.least(1));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Notificaciones de Luis (VENCIMIENTO_PROXIMO)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrlPagos}}/api/notificaciones?miembroId=2",
+              "host": [
+                "{{baseUrlPagos}}"
+              ],
+              "path": [
+                "api",
+                "notificaciones"
+              ],
+              "query": [
+                {
+                  "key": "miembroId",
+                  "value": "2"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status esperado (200)\", () => pm.expect(pm.response.code).to.be.oneOf([200]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Notificaciones de Sara (CUPO_LIBERADO)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrlPagos}}/api/notificaciones?miembroId=3",
+              "host": [
+                "{{baseUrlPagos}}"
+              ],
+              "path": [
+                "api",
+                "notificaciones"
+              ],
+              "query": [
+                {
+                  "key": "miembroId",
+                  "value": "3"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status esperado (200)\", () => pm.expect(pm.response.code).to.be.oneOf([200]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST Pago de Ana: BASICO mensual → REGISTRADO",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrlPagos}}/api/pagos",
+              "host": [
+                "{{baseUrlPagos}}"
+              ],
+              "path": [
+                "api",
+                "pagos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"miembroId\": 1,\n  \"plan\": \"BASICO\",\n  \"periodo\": \"MENSUAL\",\n  \"monto\": 50000,\n  \"metodo\": \"EFECTIVO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Fase 3: este pago publica pago.registrado → membresía de Ana pasa a ACTIVA y llega notificación."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status esperado (200,201)\", () => pm.expect(pm.response.code).to.be.oneOf([200,201]));",
+                  "const j = pm.response.json();",
+                  "pm.test(\"j.estado = REGISTRADO\", () => pm.expect(j.estado).to.eql(\"REGISTRADO\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST Pago de Sara: PREMIUM anual",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrlPagos}}/api/pagos",
+              "host": [
+                "{{baseUrlPagos}}"
+              ],
+              "path": [
+                "api",
+                "pagos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"miembroId\": 3,\n  \"plan\": \"PREMIUM\",\n  \"periodo\": \"ANUAL\",\n  \"monto\": 1152000,\n  \"metodo\": \"TRANSFERENCIA\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status esperado (200,201)\", () => pm.expect(pm.response.code).to.be.oneOf([200,201]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST Pago con periodo inválido → 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrlPagos}}/api/pagos",
+              "host": [
+                "{{baseUrlPagos}}"
+              ],
+              "path": [
+                "api",
+                "pagos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"miembroId\": 1,\n  \"plan\": \"BASICO\",\n  \"periodo\": \"SEMANAL\",\n  \"monto\": 50000,\n  \"metodo\": \"EFECTIVO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status esperado (400)\", () => pm.expect(pm.response.code).to.be.oneOf([400]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST Pago sin miembroId → 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrlPagos}}/api/pagos",
+              "host": [
+                "{{baseUrlPagos}}"
+              ],
+              "path": [
+                "api",
+                "pagos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plan\": \"BASICO\",\n  \"periodo\": \"MENSUAL\",\n  \"monto\": 50000,\n  \"metodo\": \"EFECTIVO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status esperado (400)\", () => pm.expect(pm.response.code).to.be.oneOf([400]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Pagos de Ana (ahora ≥2)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrlPagos}}/api/pagos?miembroId=1",
+              "host": [
+                "{{baseUrlPagos}}"
+              ],
+              "path": [
+                "api",
+                "pagos"
+              ],
+              "query": [
+                {
+                  "key": "miembroId",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status esperado (200)\", () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const j = pm.response.json();",
+                  "pm.test(\"≥2 pagos\", () => pm.expect(j.length).to.be.at.least(2));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "6. Crear datos nuevos",
+      "item": [
+        {
+          "name": "POST Crear miembro",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrlMiembros}}/api/miembros",
+              "host": [
+                "{{baseUrlMiembros}}"
+              ],
+              "path": [
+                "api",
+                "miembros"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Nuevo Postman\",\n  \"email\": \"nuevo{{$timestamp}}@test.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status esperado (200,201)\", () => pm.expect(pm.response.code).to.be.oneOf([200,201]));",
+                  "const j = pm.response.json();",
+                  "pm.collectionVariables.set(\"miembroNuevoId\", j.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST Crear miembro con email repetido → 400/409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrlMiembros}}/api/miembros",
+              "host": [
+                "{{baseUrlMiembros}}"
+              ],
+              "path": [
+                "api",
+                "miembros"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Otra Ana\",\n  \"email\": \"ana@test.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status esperado (400,409)\", () => pm.expect(pm.response.code).to.be.oneOf([400,409]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST Crear miembro sin email → 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrlMiembros}}/api/miembros",
+              "host": [
+                "{{baseUrlMiembros}}"
+              ],
+              "path": [
+                "api",
+                "miembros"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Sin Email\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status esperado (400)\", () => pm.expect(pm.response.code).to.be.oneOf([400]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST Crear membresía BASICO (nace SUSPENDIDA)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrlMiembros}}/api/miembros/{{miembroNuevoId}}/membresias",
+              "host": [
+                "{{baseUrlMiembros}}"
+              ],
+              "path": [
+                "api",
+                "miembros",
+                "{{miembroNuevoId}}",
+                "membresias"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plan\": \"BASICO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status esperado (200,201)\", () => pm.expect(pm.response.code).to.be.oneOf([200,201]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Acceso del nuevo → activa=false",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrlMiembros}}/api/miembros/{{miembroNuevoId}}/acceso",
+              "host": [
+                "{{baseUrlMiembros}}"
+              ],
+              "path": [
+                "api",
+                "miembros",
+                "{{miembroNuevoId}}",
+                "acceso"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status esperado (200)\", () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const j = pm.response.json();",
+                  "pm.test(\"j.activa = False\", () => pm.expect(j.activa).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST Crear membresía con plan inválido → 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrlMiembros}}/api/miembros/{{miembroNuevoId}}/membresias",
+              "host": [
+                "{{baseUrlMiembros}}"
+              ],
+              "path": [
+                "api",
+                "miembros",
+                "{{miembroNuevoId}}",
+                "membresias"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plan\": \"ORO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status esperado (400)\", () => pm.expect(pm.response.code).to.be.oneOf([400]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST Crear clase (Pilates)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrlClases}}/api/clases",
+              "host": [
+                "{{baseUrlClases}}"
+              ],
+              "path": [
+                "api",
+                "clases"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Pilates\",\n  \"instructor\": \"Marta Díaz\",\n  \"dias\": [\n    \"LUNES\",\n    \"JUEVES\"\n  ],\n  \"hora\": \"08:00\",\n  \"duracionMinutos\": 60,\n  \"aforo\": 5,\n  \"sala\": \"Sala 3\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Si tu API usa otros nombres (p. ej. 'duracion'), ajústalo aquí."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status esperado (200,201)\", () => pm.expect(pm.response.code).to.be.oneOf([200,201]));",
+                  "const j = pm.response.json();",
+                  "pm.collectionVariables.set(\"claseNuevaId\", j.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST Crear clase con aforo 0 → 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrlClases}}/api/clases",
+              "host": [
+                "{{baseUrlClases}}"
+              ],
+              "path": [
+                "api",
+                "clases"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"X\",\n  \"instructor\": \"X\",\n  \"dias\": [\n    \"LUNES\"\n  ],\n  \"hora\": \"08:00\",\n  \"duracionMinutos\": 60,\n  \"aforo\": 0,\n  \"sala\": \"S\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status esperado (400)\", () => pm.expect(pm.response.code).to.be.oneOf([400]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST Crear clase sin días → 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrlClases}}/api/clases",
+              "host": [
+                "{{baseUrlClases}}"
+              ],
+              "path": [
+                "api",
+                "clases"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"X\",\n  \"instructor\": \"X\",\n  \"dias\": [],\n  \"hora\": \"08:00\",\n  \"duracionMinutos\": 60,\n  \"aforo\": 5,\n  \"sala\": \"S\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status esperado (400)\", () => pm.expect(pm.response.code).to.be.oneOf([400]));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrlMiembros",
+      "value": "http://localhost:8081"
+    },
+    {
+      "key": "baseUrlClases",
+      "value": "http://localhost:8082"
+    },
+    {
+      "key": "baseUrlPagos",
+      "value": "http://localhost:8083"
+    },
+    {
+      "key": "miembroNuevoId",
+      "value": ""
+    },
+    {
+      "key": "claseNuevaId",
+      "value": ""
+    },
+    {
+      "key": "reservaIdMaria",
+      "value": ""
+    },
+    {
+      "key": "reservaIdLuis",
+      "value": ""
     }
   ]
 }
