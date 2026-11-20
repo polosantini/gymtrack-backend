@@ -3,34 +3,101 @@ services:
     image: postgres:16
     container_name: gymtrack-postgres
     environment:
-      POSTGRES_USER: gymtrack
-      POSTGRES_PASSWORD: gymtrack
+      POSTGRES_USER: ${DB_USER:-gymtrack}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-gymtrack}
       POSTGRES_DB: postgres
+      TZ: America/Bogota
     ports:
-      - "5432:5432"
+    - ${POSTGRES_PORT:-5432}:5432
     volumes:
-      - postgres-data:/var/lib/postgresql/data
-      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    - postgres-data:/var/lib/postgresql/data
+    - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U gymtrack"]
+      test:
+      - CMD-SHELL
+      - pg_isready -U "$${POSTGRES_USER}" -d postgres
       interval: 5s
       timeout: 5s
       retries: 10
-
   rabbitmq:
     image: rabbitmq:3-management
     container_name: gymtrack-rabbitmq
     environment:
-      RABBITMQ_DEFAULT_USER: gymtrack
-      RABBITMQ_DEFAULT_PASS: gymtrack
+      RABBITMQ_DEFAULT_USER: ${RABBIT_USER:-gymtrack}
+      RABBITMQ_DEFAULT_PASS: ${RABBIT_PASSWORD:-gymtrack}
     ports:
-      - "5672:5672"
-      - "15672:15672"
+    - ${RABBITMQ_AMQP_PORT:-5672}:5672
+    - ${RABBITMQ_MANAGEMENT_PORT:-15672}:15672
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      test:
+      - CMD
+      - rabbitmq-diagnostics
+      - ping
       interval: 10s
       timeout: 5s
       retries: 10
-
+  miembros:
+    image: ghcr.io/${GHCR_NAMESPACE:-polosantini/gymtrack-backend}/miembros-service:${IMAGE_TAG:-latest}
+    ports:
+    - ${MIEMBROS_PORT:-8081}:8081
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/gymtrack_miembros
+      DB_USER: ${DB_USER:-gymtrack}
+      DB_PASSWORD: ${DB_PASSWORD:-gymtrack}
+      TZ: America/Bogota
+      JAVA_TOOL_OPTIONS: -Duser.timezone=America/Bogota
+      RABBIT_HOST: rabbitmq
+      RABBIT_PORT: '5672'
+      RABBIT_USER: ${RABBIT_USER:-gymtrack}
+      RABBIT_PASSWORD: ${RABBIT_PASSWORD:-gymtrack}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+  clases:
+    image: ghcr.io/${GHCR_NAMESPACE:-polosantini/gymtrack-backend}/clases-service:${IMAGE_TAG:-latest}
+    ports:
+    - ${CLASES_PORT:-8082}:8082
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/gymtrack_clases
+      DB_USER: ${DB_USER:-gymtrack}
+      DB_PASSWORD: ${DB_PASSWORD:-gymtrack}
+      TZ: America/Bogota
+      JAVA_TOOL_OPTIONS: -Duser.timezone=America/Bogota
+      RABBIT_HOST: rabbitmq
+      RABBIT_PORT: '5672'
+      RABBIT_USER: ${RABBIT_USER:-gymtrack}
+      RABBIT_PASSWORD: ${RABBIT_PASSWORD:-gymtrack}
+      MIEMBROS_BASE_URL: http://miembros:8081
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      miembros:
+        condition: service_started
+    restart: unless-stopped
+  pagos:
+    image: ghcr.io/${GHCR_NAMESPACE:-polosantini/gymtrack-backend}/pagos-service:${IMAGE_TAG:-latest}
+    ports:
+    - ${PAGOS_PORT:-8083}:8083
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/gymtrack_pagos
+      DB_USER: ${DB_USER:-gymtrack}
+      DB_PASSWORD: ${DB_PASSWORD:-gymtrack}
+      TZ: America/Bogota
+      JAVA_TOOL_OPTIONS: -Duser.timezone=America/Bogota
+      RABBIT_HOST: rabbitmq
+      RABBIT_PORT: '5672'
+      RABBIT_USER: ${RABBIT_USER:-gymtrack}
+      RABBIT_PASSWORD: ${RABBIT_PASSWORD:-gymtrack}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
 volumes:
-  postgres-data:
+  postgres-data: null
