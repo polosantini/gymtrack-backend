@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Settings de Maven solo para el build de las imagenes Docker.
+
+  Dentro del build de Docker en GitHub Actions, repo.maven.apache.org responde
+  "Could not find artifact" para spring-boot-starter-parent:3.3.5, que si existe,
+  mientras que desde el propio runner (job ci) la descarga funciona. Este espejo
+  publico de Maven Central en Google Cloud sirve los mismos artefactos y evita
+  depender de ese endpoint dentro del contenedor.
+-->
+<settings xmlns="http://maven.apache.org/SETTINGS/1.2.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.2.0 https://maven.apache.org/xsd/settings-1.2.0.xsd">
+  <mirrors>
+    <mirror>
+      <id>google-maven-central</id>
+      <name>Espejo de Maven Central en Google Cloud Storage</name>
+      <url>https://maven-central.storage-download.googleapis.com/maven2/</url>
+      <mirrorOf>central</mirrorOf>
+    </mirror>
+  </mirrors>
+</settings>
