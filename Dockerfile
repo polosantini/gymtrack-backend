@@ -10,29 +10,12 @@ COPY clases-service/pom.xml clases-service/pom.xml
 COPY clases-service/src clases-service/src
 COPY pagos-service/pom.xml pagos-service/pom.xml
 COPY pagos-service/src pagos-service/src
-# Reutiliza dependencias entre builds del mismo builder. El lock evita escritores simultaneos.
-# Reintenta solo errores de resolucion; errores de compilacion siguen fallando inmediatamente.
-RUN --mount=type=cache,id=gymtrack-maven-docker,target=/root/.m2,sharing=locked \
-    set -eu; \
-    test -n "${SERVICIO}"; \
-    intento=1; \
-    while :; do \
-        echo "Construyendo ${SERVICIO}: intento Maven ${intento}/3"; \
-        if mvn -B -U -pl "${SERVICIO}" -am package -DskipTests > /tmp/gymtrack-maven.log 2>&1; then \
-            cat /tmp/gymtrack-maven.log; \
-            break; \
-        else \
-            codigo=$?; \
-            cat /tmp/gymtrack-maven.log; \
-        fi; \
-        if [ "${intento}" -ge 3 ] || ! grep -Eiq 'Could not (find|transfer|resolve) artifact|Non-resolvable parent POM|Failed to read artifact descriptor' /tmp/gymtrack-maven.log; then \
-            exit "${codigo}"; \
-        fi; \
-        espera=$((intento * 15)); \
-        echo "Fallo de resolucion Maven; reintentando en ${espera}s."; \
-        sleep "${espera}"; \
-        intento=$((intento + 1)); \
-    done
+RUN --mount=type=cache,target=/root/.m2/repository \
+    test -n "${SERVICIO}" && \
+    mvn -B -ntp -pl "${SERVICIO}" -am package -DskipTests \
+      -Dmaven.wagon.http.retryHandler.count=5 \
+      -Dmaven.wagon.http.retryHandler.requestSentEnabled=true \
+      -Dmaven.wagon.rto=120000
 
 FROM eclipse-temurin:21-jre
 WORKDIR /app
