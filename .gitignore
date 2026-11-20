@@ -39,3 +39,6 @@ Thumbs.db
 .env
 .env.*
 !.env.example
+
+# Evidencia generada al ejecutar la demo (se conserva como artefacto en Actions)
+docs/evidencias/40-pagos-apagado/

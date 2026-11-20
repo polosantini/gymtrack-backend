@@ -100,6 +100,14 @@ docker compose stop pagos
 docker compose start pagos
 ```
 
-Mantener Miembros, PostgreSQL y RabbitMQ encendidos. El procedimiento completo y los resultados pertenecen a #40; estos comandos por sí solos no demuestran que la reserva funcione con Pagos apagado.
+Mantener Miembros, PostgreSQL y RabbitMQ encendidos. La prueba completa está en [la guía de #40](docs/informe/40-pagos-apagado.md). Con los cinco servicios arrancados, ejecutar desde la raíz:
+
+```powershell
+pwsh -NoProfile -File ./scripts/demo/probar-pagos-apagado.ps1
+```
+
+En Windows también se puede utilizar `powershell -NoProfile -File .\scripts\demo\probar-pagos-apagado.ps1`. El script detecta los puertos publicados, requiere un miembro Premium ya activo (por defecto María, id 6), crea una clase nueva, detiene Pagos, comprueba catálogo/reserva/error controlado y restaura Pagos al finalizar. Conserva la clase y la reserva como evidencia; no modifica membresías ni elimina datos.
+
+El job `Validar Docker y arranque` ejecuta esta prueba después del arranque HTTP y conserva un artefacto JSON. Una ejecución con `resultado=OK` es la evidencia de Docker; agregar el procedimiento no equivale a haberlo ejecutado correctamente.
 
 Referencia: [publicación y visibilidad de paquetes GHCR](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry).

@@ -48,6 +48,17 @@ jobs:
             'http://localhost:8083/api/pagos?miembroId=6'; do
             curl --fail --silent --show-error --retry 30 --retry-all-errors --retry-delay 2 --connect-timeout 5 --max-time 10 "$url"
           done
+      - name: Probar catalogo y reservas con Pagos apagado (#40)
+        shell: pwsh
+        run: ./scripts/demo/probar-pagos-apagado.ps1
+      - name: Conservar evidencia de disponibilidad
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: evidencia-40-pagos-apagado-${{ github.run_id }}-${{ github.run_attempt }}
+          path: docs/evidencias/40-pagos-apagado/ejecucion-docker.json
+          if-no-files-found: warn
+          retention-days: 30
       - name: Mostrar diagnostico si falla
         if: failure()
         run: |

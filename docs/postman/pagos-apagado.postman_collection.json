@@ -1,0 +1,209 @@
+{
+  "info": {
+    "name": "GymTrack B #40 - Disponibilidad sin Pagos",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Detener Pagos antes de ejecutar. Mantener Miembros, Clases, PostgreSQL y RabbitMQ en ejecucion. Requiere un miembro PREMIUM ya activo (Maria, id=6). Crea una clase y una reserva nuevas; no elimina datos ni modifica membresias. Restaurar Pagos al finalizar. La comprobacion HTTP no sustituye verificar el estado real del contenedor con docker compose ps. La parada de Pagos se verifica con Docker/script; la colección se ejecuta después. No incluye una solicitud al puerto apagado, que Newman marcaría como error de transporte aunque fuera esperado."
+  },
+  "variable": [
+    {
+      "key": "clasesUrl",
+      "value": "http://localhost:8082"
+    },
+    {
+      "key": "miembrosUrl",
+      "value": "http://localhost:8081"
+    },
+    {
+      "key": "pagosUrl",
+      "value": "http://localhost:8083"
+    },
+    {
+      "key": "miembroId",
+      "value": "6"
+    }
+  ],
+  "item": [
+    {
+      "name": "01 - Miembro Premium ya activo",
+      "request": {
+        "method": "GET",
+        "url": "{{miembrosUrl}}/api/miembros/{{miembroId}}/acceso",
+        "header": []
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+              "pm.test(\"Activo y Premium\",()=>{const r=pm.response.json();pm.expect(r.activa).to.eql(true);pm.expect(r.plan).to.eql(\"PREMIUM\");});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 - Catalogo con Pagos apagado",
+      "request": {
+        "method": "GET",
+        "url": "{{clasesUrl}}/api/clases",
+        "header": []
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+              "pm.test(\"Catalogo en formato lista\",()=>pm.expect(Array.isArray(pm.response.json())).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 - Crear clase de prueba",
+      "request": {
+        "method": "POST",
+        "url": "{{clasesUrl}}/api/clases",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Disponibilidad #54\",\n  \"instructor\": \"Prueba\",\n  \"dias\": [\n    \"LUNES\",\n    \"MARTES\",\n    \"MIERCOLES\",\n    \"JUEVES\",\n    \"VIERNES\",\n    \"SABADO\",\n    \"DOMINGO\"\n  ],\n  \"hora\": \"18:00\",\n  \"duracionMinutos\": 45,\n  \"aforo\": 10,\n  \"sala\": \"Prueba #54\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 201\",()=>pm.response.to.have.status(201));",
+              "pm.collectionVariables.set(\"claseId\",pm.response.json().id);pm.collectionVariables.set(\"fechaPrueba\",new Date(Date.now()+86400000).toISOString().slice(0,10));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 - Reservar con Pagos apagado",
+      "request": {
+        "method": "POST",
+        "url": "{{clasesUrl}}/api/reservas",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"miembroId\": \"{{miembroId}}\",\n  \"claseId\": \"{{claseId}}\",\n  \"fecha\": \"{{fechaPrueba}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 201\",()=>pm.response.to.have.status(201));",
+              "pm.test(\"Reserva confirmada\",()=>pm.expect(pm.response.json().estado).to.eql(\"CONFIRMADA\"));pm.collectionVariables.set(\"reservaId\",pm.response.json().id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 - Reserva persistida",
+      "request": {
+        "method": "GET",
+        "url": "{{clasesUrl}}/api/reservas?miembroId={{miembroId}}",
+        "header": []
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+              "pm.test(\"Reserva en historial\",()=>pm.expect(pm.response.json().some(r=>r.id===Number(pm.collectionVariables.get(\"reservaId\")))).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 - Error controlado",
+      "request": {
+        "method": "POST",
+        "url": "{{clasesUrl}}/api/reservas",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"miembroId\": null,\n  \"claseId\": \"{{claseId}}\",\n  \"fecha\": \"{{fechaPrueba}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 400\",()=>pm.response.to.have.status(400));",
+              "pm.test(\"Error uniforme\",()=>{const r=pm.response.json();pm.expect(r.status).to.eql(400);pm.expect(r.message).to.be.a(\"string\").and.not.empty;pm.expect(r.path).to.eql(\"/api/reservas\");});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 - Catalogo sigue vivo despues del error",
+      "request": {
+        "method": "GET",
+        "url": "{{clasesUrl}}/api/clases?fecha={{fechaPrueba}}",
+        "header": []
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));",
+              "pm.test(\"Cupos correctos\",()=>{const c=pm.response.json().find(c=>c.id===Number(pm.collectionVariables.get(\"claseId\")));pm.expect(c.cuposLibres).to.eql(9);});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
