@@ -1,7 +1,7 @@
 # ADR-005: Eventos publicados después del commit y consumidores idempotentes
 
 - **Estado:** Aceptada
-- **Fecha:** 2026-11-20
+- **Fecha:** 2026-11-05
 - **Issues relacionados:** #30, #31, #33, #34, #35, #37
 
 ## Contexto

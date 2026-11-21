@@ -1,7 +1,7 @@
 # ADR-021: Disponibilidad: Clases y Reservas siguen funcionando con Pagos apagado
 
 - **Estado:** Aceptada
-- **Fecha:** 2026-11-20
+- **Fecha:** 2026-11-05
 - **Issues relacionados:** #25, #40
 
 ## Contexto

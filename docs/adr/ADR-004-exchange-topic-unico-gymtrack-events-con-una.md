@@ -1,7 +1,7 @@
 # ADR-004: Exchange topic único `gymtrack.events` con una cola por consumidor
 
 - **Estado:** Aceptada
-- **Fecha:** 2026-11-20
+- **Fecha:** 2026-11-05
 - **Issues relacionados:** #2, #3, #30–#35
 
 ## Contexto

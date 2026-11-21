@@ -1,7 +1,7 @@
 # ADR-016: Sin autorización real: selector "actuar como" solo como etiqueta visual
 
 - **Estado:** Aceptada
-- **Fecha:** 2026-11-20
+- **Fecha:** 2026-11-05
 - **Issues relacionados:** #36
 
 ## Contexto

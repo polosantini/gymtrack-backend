@@ -1,7 +1,7 @@
 # ADR-015: Sin API Gateway: proxy de Vite en desarrollo y nginx en producción
 
 - **Estado:** Aceptada
-- **Fecha:** 2026-11-20
+- **Fecha:** 2026-11-05
 - **Issues relacionados:** #6, #42
 
 ## Contexto

@@ -1,7 +1,7 @@
 # ADR-010: Factory Method para crear membresías Básica, Full y Premium
 
 - **Estado:** Aceptada
-- **Fecha:** 2026-11-20
+- **Fecha:** 2026-11-05
 - **Issues relacionados:** #21, #37
 
 ## Contexto

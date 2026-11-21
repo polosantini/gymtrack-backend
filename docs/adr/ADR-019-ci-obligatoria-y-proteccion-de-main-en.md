@@ -1,7 +1,7 @@
 # ADR-019: CI obligatoria y protección de `main` en ambos repos
 
 - **Estado:** Aceptada
-- **Fecha:** 2026-11-20
+- **Fecha:** 2026-11-05
 - **Issues relacionados:** #4, #5, #7
 
 ## Contexto

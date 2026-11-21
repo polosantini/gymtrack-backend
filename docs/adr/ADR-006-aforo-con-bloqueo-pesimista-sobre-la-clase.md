@@ -1,7 +1,7 @@
 # ADR-006: Aforo con bloqueo pesimista sobre la clase
 
 - **Estado:** Aceptada
-- **Fecha:** 2026-11-20
+- **Fecha:** 2026-11-05
 - **Issues relacionados:** #27, #38
 
 ## Contexto

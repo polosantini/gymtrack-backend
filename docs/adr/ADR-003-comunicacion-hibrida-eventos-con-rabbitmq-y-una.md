@@ -1,7 +1,7 @@
 # ADR-003: Comunicación híbrida: eventos con RabbitMQ y una única llamada REST (`/acceso`)
 
 - **Estado:** Aceptada
-- **Fecha:** 2026-11-20
+- **Fecha:** 2026-11-05
 - **Issues relacionados:** #22, #25, #30–#35
 
 ## Contexto

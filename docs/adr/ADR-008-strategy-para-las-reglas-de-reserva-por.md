@@ -1,7 +1,7 @@
 # ADR-008: Strategy para las reglas de reserva por plan, con DIP
 
 - **Estado:** Aceptada
-- **Fecha:** 2026-11-20
+- **Fecha:** 2026-11-05
 - **Issues relacionados:** #23, #24, #39
 
 ## Contexto

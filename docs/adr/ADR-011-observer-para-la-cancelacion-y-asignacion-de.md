@@ -1,7 +1,7 @@
 # ADR-011: Observer para la cancelación y asignación de cupo solo por evento
 
 - **Estado:** Aceptada
-- **Fecha:** 2026-11-20
+- **Fecha:** 2026-11-05
 - **Issues relacionados:** #14b, #33, #34, #35
 
 ## Contexto
