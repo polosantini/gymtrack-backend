@@ -1,7 +1,7 @@
 # ADR-017: Esquema con `ddl-auto=update` y datos de demo con `data.sql`
 
 - **Estado:** Aceptada
-- **Fecha:** 2026-11-20
+- **Fecha:** 2026-11-05
 - **Issues relacionados:** #9, #10, #13, #14, #18
 
 ## Contexto

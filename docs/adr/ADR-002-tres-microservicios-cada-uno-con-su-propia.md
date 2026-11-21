@@ -1,7 +1,7 @@
 # ADR-002: Tres microservicios, cada uno con su propia base de datos
 
 - **Estado:** Aceptada
-- **Fecha:** 2026-11-20
+- **Fecha:** 2026-11-05
 - **Issues relacionados:** #2, #9, #10, #14
 
 ## Contexto

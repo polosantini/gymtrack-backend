@@ -1,7 +1,7 @@
 # ADR-014: Contratos primero y frontend con mocks
 
 - **Estado:** Aceptada
-- **Fecha:** 2026-11-20
+- **Fecha:** 2026-11-05
 - **Issues relacionados:** #6, #8, #19, #20, #36
 
 ## Contexto

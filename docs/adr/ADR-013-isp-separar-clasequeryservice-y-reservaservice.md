@@ -1,7 +1,7 @@
 # ADR-013: ISP: separar ClaseQueryService y ReservaService
 
 - **Estado:** Aceptada
-- **Fecha:** 2026-11-20
+- **Fecha:** 2026-11-05
 - **Issues relacionados:** #26
 
 ## Contexto

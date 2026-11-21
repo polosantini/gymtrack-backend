@@ -1,7 +1,7 @@
 # ADR-012: Lista de espera con posición persistida y estable
 
 - **Estado:** Aceptada
-- **Fecha:** 2026-11-20
+- **Fecha:** 2026-11-05
 - **Issues relacionados:** #16, #17, #28, #34
 
 ## Contexto

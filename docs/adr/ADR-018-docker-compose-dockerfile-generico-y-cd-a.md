@@ -1,7 +1,7 @@
 # ADR-018: Docker Compose, Dockerfile genérico y CD a GHCR
 
 - **Estado:** Aceptada
-- **Fecha:** 2026-11-20
+- **Fecha:** 2026-11-05
 - **Issues relacionados:** #2, #41, #42
 
 ## Contexto

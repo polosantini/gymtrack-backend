@@ -1,7 +1,7 @@
 # ADR-007: La clase es una plantilla y el aforo se cuenta por (clase, fecha)
 
 - **Estado:** Aceptada
-- **Fecha:** 2026-11-20
+- **Fecha:** 2026-11-05
 - **Issues relacionados:** #14, #15, #16, #17
 
 ## Contexto

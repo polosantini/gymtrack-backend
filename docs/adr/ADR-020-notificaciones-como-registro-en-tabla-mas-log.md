@@ -1,7 +1,7 @@
 # ADR-020: Notificaciones como registro en tabla más log, sin correos reales
 
 - **Estado:** Aceptada
-- **Fecha:** 2026-11-20
+- **Fecha:** 2026-11-05
 - **Issues relacionados:** #10, #12, #31, #32, #35, #36
 
 ## Contexto

@@ -1,7 +1,7 @@
 # ADR-001: Repos: monorepo Maven multimódulo para el backend y repo aparte para el frontend
 
 - **Estado:** Aceptada
-- **Fecha:** 2026-11-20
+- **Fecha:** 2026-11-05
 - **Issues relacionados:** #1, #3, #6
 
 ## Contexto
